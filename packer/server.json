@@ -1,0 +1,33 @@
+{
+    "builders": [
+        {
+            "type": "amazon-ebs",
+            "profile": "nuuday_digital_dev",
+            "vpc_id": "vpc-0119e6b03a317491d",
+            "subnet_id": "subnet-0480f2cd299797e0f",
+            "ami_name": "Sitecore {{timestamp}}",
+            "instance_type": "t3.micro",
+            "source_ami_filter": {
+                "filters": {
+                    "virtualization-type": "hvm",
+                    "name": "Windows_Server-2019-English-Core-*",
+                    "root-device-type": "ebs"
+                },
+                "most_recent": true,
+                "owners": ["801119661308"]
+            },
+            "user_data_file": "./Enable-WinRm.ps1",
+            "communicator": "winrm",
+            "winrm_username": "Administrator"
+        }
+    ],
+
+    "provisioners": [
+        {
+            "type": "powershell",
+            "inline": [
+                "dir c:"
+            ]
+        }
+    ]
+}
