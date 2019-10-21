@@ -1,0 +1,78 @@
+{
+  "min_packer_version": "0.12.0",
+  "variables": {
+    "aws_profile": "nuuday_digital_dev",
+    "aws_region": "eu-north-1",
+    "aws_vpc_id": "vpc-0150aa2f0d4bd9dcb",
+    "aws_subnet_id": "subnet-010f4adf259f36a9a",
+    "ec2_instance_type": "t3.medium",
+    "nomad_version": "0.9.5",
+    "consul_module_version": "v0.7.3",
+    "consul_version": "1.6.1"
+  },
+  "builders": [
+    {
+      "name": "ubuntu18-ami",
+      "ami_name": "nomad-consul-ubuntu18-{{isotime | clean_ami_name}}",
+      "ami_description": "An example of how to build an Ubuntu 18.04 AMI that has Nomad and Consul installed",
+      "region": "{{user `aws_region`}}",
+      "instance_type": "{{user `ec2_instance_type`}}",
+      "profile": "{{user `aws_profile`}}",
+      "vpc_id": "{{user `aws_vpc_id`}}",
+      "subnet_id": "{{user `aws_subnet_id`}}",
+      "associate_public_ip_address": true,
+      "skip_region_validation": true,
+      "type": "amazon-ebs",
+      "source_ami_filter": {
+       "filters": {
+         "virtualization-type": "hvm",
+         "architecture": "x86_64",
+         "name": "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*",
+         "root-device-type": "ebs",
+         "block-device-mapping.volume-type": "gp2"
+       },
+       "owners": [
+         "099720109477"
+       ],
+       "most_recent": true
+      },
+      "ssh_username": "ubuntu",
+      "tags": {
+          "Team": "odin-platform"
+      }
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sudo apt-get install -y git"
+      ],
+      "only": [
+        "ubuntu18-ami"
+      ]
+    },
+    {
+      "type": "shell",
+      "script": "{{template_dir}}/setup_docker.sh",
+      "only": [
+        "ubuntu18-ami"
+      ]
+    },
+    {
+      "type": "file",
+      "source": "{{template_dir}}/bundle",
+      "destination": "/tmp",
+      "pause_before": "30s"
+    },
+      {
+      "type": "shell",
+      "environment_vars": [
+        "NOMAD_VERSION={{user `nomad_version`}}",
+        "CONSUL_VERSION={{user `consul_version`}}",
+        "CONSUL_MODULE_VERSION={{user `consul_module_version`}}"
+      ],
+      "script": "{{template_dir}}/setup_nomad_consul.sh"
+    }
+  ]
+}
