@@ -140,8 +140,14 @@ module "clients" {
   ]
 }
 
-module "consul_iam_policies" {
+module "consul_iam_policies_clients" {
   source = "github.com/hashicorp/terraform-aws-consul//modules/consul-iam-policies?ref=v0.7.0"
 
   iam_role_id = module.clients.iam_role_id
+}
+
+module "consul_iam_policies_servers" {
+  source = "github.com/hashicorp/terraform-aws-consul//modules/consul-iam-policies?ref=v0.7.0"
+
+  iam_role_id = module.servers.iam_role_id
 }

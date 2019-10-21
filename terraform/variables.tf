@@ -28,7 +28,7 @@ variable "instance_type" {
 variable "server_instance_type" {
   description = "What kind of instance type to use for the nomad servers"
   type        = string
-  default     = "t2.micro"
+  default     = "t3.medium"
 }
 
 variable "num_servers" {
@@ -58,7 +58,7 @@ variable "cluster_tag_value" {
 variable "ssh_key_name" {
   description = "The name of an EC2 Key Pair that can be used to SSH to the EC2 Instances in this cluster. Set to an empty string to not associate a Key Pair."
   type        = string
-  default     = "ThinkCentre"
+  default     = "ASORE"
 }
 
 variable "vpc_cidr_block" {
