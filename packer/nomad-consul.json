@@ -12,9 +12,9 @@
   },
   "builders": [
     {
-      "name": "ubuntu18-ami",
+      "name": "nomad-consul-ubuntu18",
       "ami_name": "nomad-consul-ubuntu18-{{isotime | clean_ami_name}}",
-      "ami_description": "An example of how to build an Ubuntu 18.04 AMI that has Nomad and Consul installed",
+      "ami_description": "Ubuntu 18.04 LTS with Nomad, Consul, and Docker EE installed.",
       "region": "{{user `aws_region`}}",
       "instance_type": "{{user `ec2_instance_type`}}",
       "profile": "{{user `aws_profile`}}",
@@ -49,21 +49,23 @@
         "sudo apt-get install -y git"
       ],
       "only": [
-        "ubuntu18-ami"
+        "nomad-consul-ubuntu18"
       ]
     },
     {
       "type": "shell",
       "script": "{{template_dir}}/setup_docker.sh",
       "only": [
-        "ubuntu18-ami"
+        "nomad-consul-ubuntu18"
       ]
     },
     {
       "type": "file",
       "source": "{{template_dir}}/bundle",
       "destination": "/tmp",
-      "pause_before": "30s"
+      "only": [
+        "nomad-consul-ubuntu18"
+      ]
     },
       {
       "type": "shell",
@@ -72,7 +74,10 @@
         "CONSUL_VERSION={{user `consul_version`}}",
         "CONSUL_MODULE_VERSION={{user `consul_module_version`}}"
       ],
-      "script": "{{template_dir}}/setup_nomad_consul.sh"
+      "script": "{{template_dir}}/setup_nomad_consul.sh",
+      "only": [
+        "nomad-consul-ubuntu18"
+      ]
     }
   ]
 }
