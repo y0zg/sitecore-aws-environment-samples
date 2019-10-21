@@ -3,8 +3,8 @@
   "variables": {
     "aws_profile": "nuuday_digital_dev",
     "aws_region": "eu-north-1",
-    "aws_vpc_id": "vpc-0150aa2f0d4bd9dcb",
-    "aws_subnet_id": "subnet-010f4adf259f36a9a",
+    "aws_vpc_id": "vpc-0b3cccc176f4ad9cc",
+    "aws_subnet_id": "subnet-0cd9d8d5a235ef29a",
     "ec2_instance_type": "t3.medium",
     "nomad_version": "0.9.5",
     "consul_module_version": "v0.7.3",
