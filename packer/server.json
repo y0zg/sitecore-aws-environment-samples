@@ -1,12 +1,11 @@
 {
+    "variables": {
+    },
     "builders": [
         {
             "type": "amazon-ebs",
-            "profile": "nuuday_digital_dev",
-            "vpc_id": "vpc-0119e6b03a317491d",
-            "subnet_id": "subnet-0480f2cd299797e0f",
-            "ami_name": "Sitecore {{timestamp}}",
-            "instance_type": "t3.micro",
+            "ami_name": "sitecore-{{timestamp}}",
+            "instance_type": "t3.medium",
             "source_ami_filter": {
                 "filters": {
                     "virtualization-type": "hvm",
@@ -14,11 +13,43 @@
                     "root-device-type": "ebs"
                 },
                 "most_recent": true,
-                "owners": ["801119661308"]
+                "owners": ["amazon"]
             },
             "user_data_file": "./Enable-WinRm.ps1",
             "communicator": "winrm",
             "winrm_username": "Administrator"
+        },
+        {
+            "type": "virtualbox-iso",
+            "guest_os_type": "Windows2016_64",
+            "guest_additions_mode": "attach",
+            "keep_registered": true,
+            "iso_checksum_type": "none",
+            "iso_url": "/home/anders/Downloads/17763.379.190312-0539.rs5_release_svc_refresh_SERVER_EVAL_x64FRE_en-us.iso",
+            "communicator": "winrm",
+            "winrm_username": "vagrant",
+            "winrm_password": "vagrant",
+            "winrm_use_ssl": true,
+            "winrm_insecure": true,
+            "floppy_files": [
+                "{{ template_dir }}/win2019/Autounattend.xml",
+                "{{ template_dir }}/win2019/sysprep.bat"
+            ],
+            "shutdown_command": "A:\\sysprep.bat",
+            "vboxmanage": [
+                [
+                    "modifyvm",
+                    "{{ .Name }}",
+                    "--cpus",
+                    "2"
+                ],
+                [
+                    "modifyvm",
+                    "{{ .Name }}",
+                    "--memory",
+                    "2048"
+                ]
+            ]
         }
     ],
 
@@ -27,6 +58,24 @@
             "type": "powershell",
             "inline": [
                 "dir c:"
+            ]
+        },
+        {
+            "type": "powershell",
+            "inline": [
+                "Install-PackageProvider NuGet -Force",
+                "Install-Module DockerMsftProvider -Force",
+                "Install-Package Docker -ProviderName DockerMsftProvider -Force"
+            ]
+        },
+        {
+            "type": "windows-restart"
+        },
+        {
+            "type": "powershell",
+            "inline": [
+                "Start-Service docker",
+                "docker run --rm hello-world:nanoserver"
             ]
         }
     ]
