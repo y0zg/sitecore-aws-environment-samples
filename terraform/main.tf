@@ -23,6 +23,13 @@ data "aws_ami" "nomad_consul" {
   }
 }
 
+locals {
+  asore_tsunami_ip = "128.76.39.70/32"
+}
+
+# Interpolates the key/value pairs in user-data-server.sh
+# This shell script is attached to the EC2 instances as "user data",
+# which is AWS-speak for "run this on boot".
 data "template_file" "user_data_server" {
   template = file("${path.module}/scripts/user-data-server.sh")
 
@@ -33,9 +40,14 @@ data "template_file" "user_data_server" {
   }
 }
 
-# Gives back the current region we're deploying into.
-# We'll use this to get "availability zones" in the next step.
-data "aws_region" "current" {}
+# LOAD BALANCER
+
+resource "aws_lb" "ingress" {
+  name = "${var.cluster_name}-lb"
+  load_balancer_type = "application"
+  count = var.provision_load_balancer == true ? 1 : 0
+  subnets = 
+}
 
 # NETWORK
 
@@ -76,7 +88,8 @@ module "servers" {
   ]
 
   allowed_inbound_cidr_blocks = [
-    "128.76.39.70/32"
+    "128.76.39.70/32",
+    var.vpc_cidr_block
   ]
 
   ssh_key_name = var.ssh_key_name
@@ -90,6 +103,9 @@ module "servers" {
   ]
 }
 
+# Interpolates the key/value pairs in user-data-client.sh
+# This shell script is attached to the EC2 instances as "user data",
+# which is AWS-speak for "run this on boot".
 data "template_file" "user_data_client" {
   template = file("${path.module}/scripts/user-data-client.sh")
 
@@ -126,7 +142,8 @@ module "clients" {
   ]
 
   allowed_inbound_cidr_blocks = [
-    "128.76.39.70/32"
+    "128.76.39.70/32",
+    var.vpc_cidr_block
   ]
 
   ssh_key_name = var.ssh_key_name
@@ -138,6 +155,25 @@ module "clients" {
       propagate_at_launch = true
     }
   ]
+}
+
+module "security_group_rules_servers" {
+  source = "github.com/hashicorp/terraform-aws-nomad.git//modules/nomad-security-group-rules?ref=v0.5.0"
+
+  security_group_id = "${module.servers.security_group_id}"
+
+  allowed_inbound_cidr_blocks = [
+    var.vpc_cidr_block,
+    local.asore_tsunami_ip
+  ]
+}
+
+module "security_group_rules_clients" {
+  source = "github.com/hashicorp/terraform-aws-consul.git//modules/consul-security-group-rules?ref=v0.7.0"
+
+  security_group_id = "${module.clients.security_group_id}"
+
+  allowed_inbound_cidr_blocks = [var.vpc_cidr_block]
 }
 
 module "consul_iam_policies_clients" {

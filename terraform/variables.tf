@@ -13,6 +13,12 @@ variable "ami_id" {
   default     = null
 }
 
+variable "provision_load_balancer" {
+  description = "Whether to deploy an Amazon Load Balancer which will be attached to the client Auto Scaling Group"
+  type = bool
+  default = true
+}
+
 variable "cluster_name" {
   description = "What to name the cluster and all of its associated resources"
   type        = string
@@ -40,7 +46,7 @@ variable "num_servers" {
 variable "num_clients" {
   description = "The number of client nodes to deploy. You can deploy as many as you need to run your jobs."
   type        = number
-  default     = 2
+  default     = 5
 }
 
 variable "cluster_tag_key" {
