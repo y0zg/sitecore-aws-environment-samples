@@ -67,3 +67,12 @@ variable "vpc_cidr_block" {
   default     = "10.0.0.0/16"
 }
 
+variable "vpc_subnets" {
+  type = map
+  default = {
+    "eu-north-1a" = "10.0.0.0/23"
+    "eu-north-1b" = "10.0.2.0/23"
+    "eu-north-1c" = "10.0.4.0/23"
+  }
+}
+

@@ -37,22 +37,20 @@ data "template_file" "user_data_server" {
 # We'll use this to get "availability zones" in the next step.
 data "aws_region" "current" {}
 
-# Gives back available "availability zones" (AZ) in the current region.
-# We'll use that to establish networks in each AZ to increase resiliency of our cluster.
-data "aws_availability_zones" "all" {
-  state = "available"
-}
-
 # NETWORK
 
-resource "aws_vpc" "nomad" {
-  cidr_block = var.vpc_cidr_block
-}
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
 
-resource "aws_" 
+  name = "${var.cluster_name}-vpc"
+  cidr = var.vpc_cidr_block
 
-data "aws_subnet_ids" "all" {
-  vpc_id = "${aws_vpc.nomad.id}"
+  azs            = keys(var.vpc_subnets)
+  public_subnets = values(var.vpc_subnets)
+
+  tags = {
+    Team = "odin-platform"
+  }
 }
 
 module "servers" {
@@ -70,8 +68,8 @@ module "servers" {
   ami_id = var.ami_id == null ? data.aws_ami.nomad_consul.image_id : var.ami_id
   user_data = data.template_file.user_data_server.rendered
 
-  vpc_id = "${aws_vpc.nomad.id}"
-  subnet_ids = data.aws_subnet_ids.all.ids
+  vpc_id = module.vpc.vpc_id
+  subnet_ids = module.vpc.public_subnets
 
   allowed_ssh_cidr_blocks = [
     "128.76.39.70/32"
@@ -120,8 +118,8 @@ module "clients" {
   ami_id = var.ami_id == null ? data.aws_ami.nomad_consul.image_id : var.ami_id
   user_data = data.template_file.user_data_client.rendered
 
-  vpc_id = data.aws_vpc.default.id
-  subnet_ids = data.aws_subnet_ids.default.ids
+  vpc_id = module.vpc.vpc_id
+  subnet_ids = module.vpc.public_subnets
 
   allowed_ssh_cidr_blocks = [
     "128.76.39.70/32"
@@ -142,3 +140,8 @@ module "clients" {
   ]
 }
 
+module "consul_iam_policies" {
+  source = "github.com/hashicorp/terraform-aws-consul//modules/consul-iam-policies?ref=v0.7.0"
+
+  iam_role_id = module.clients.iam_role_id
+}
