@@ -58,12 +58,6 @@ data "template_file" "user_data_server" {
 
 # LOAD BALANCER
 
-resource "aws_lb" "ingress" {
-  name = "${var.cluster_name}-lb"
-  load_balancer_type = "application"
-  count = var.provision_load_balancer == true ? 1 : 0
-  subnets = 
-}
 
 # NETWORK
 
@@ -131,6 +125,15 @@ data "template_file" "user_data_client" {
   }
 }
 
+data "template_file" "user_data_consul_client_win" {
+  template = file("${path.module}/scripts/Initialize-NomadConsulUserData.ps1")
+
+  vars = {
+    cluster_tag_key = var.cluster_tag_key
+    cluster_tag_value = var.cluster_tag_value
+  }
+}
+
 module "clients" {
   source = "github.com/hashicorp/terraform-aws-nomad//modules/nomad-cluster?ref=v0.5.0"
 
@@ -147,8 +150,8 @@ module "clients" {
   max_size = var.num_clients
   desired_capacity = var.num_clients
 
-  ami_id = var.ami_id == null ? data.aws_ami.nomad_consul.image_id : var.ami_id
-  user_data = data.template_file.user_data_client.rendered
+  ami_id = var.ami_id == null ? data.aws_ami.nomad_consul_windows.image_id : var.ami_id
+  user_data = data.template_file.user_data_consul_client_win.rendered
 
   vpc_id = module.vpc.vpc_id
   subnet_ids = module.vpc.public_subnets

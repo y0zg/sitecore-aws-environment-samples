@@ -28,8 +28,7 @@
          "virtualization-type": "hvm",
          "architecture": "x86_64",
          "name": "ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*",
-         "root-device-type": "ebs",
-         "block-device-mapping.volume-type": "gp2"
+         "root-device-type": "ebs"
        },
        "owners": [
          "099720109477"
@@ -114,6 +113,14 @@
       ]
     },
     {
+      "type": "file",
+      "source": "{{template_dir}}/bundle",
+      "destination": "c:/",
+      "only": [
+        "nomad-consul-windowsserver2019"
+      ]
+    },
+    {
       "type": "powershell",
       "environment_vars": [
         "NOMAD_VERSION={{user `nomad_version`}}",
@@ -128,7 +135,17 @@
     {
       "type": "powershell",
       "inline": [
-        "docker pull mcr.microsoft.com/windows/servercore:ltsc2019"
+        "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null",
+        "choco install -y awscli jq"
+      ],
+      "only": [
+        "nomad-consul-windowsserver2019"
+      ]
+    },
+    {
+      "type": "powershell",
+      "inline": [
+        "docker pull mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019"
       ],
       "only": [
         "nomad-consul-windowsserver2019"
