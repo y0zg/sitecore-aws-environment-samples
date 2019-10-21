@@ -36,7 +36,41 @@
        ],
        "most_recent": true
       },
+      "communicator": "ssh",
       "ssh_username": "ubuntu",
+      "tags": {
+          "Team": "odin-platform"
+      }
+    },
+    {
+      "name": "nomad-consul-windowsserver2019",
+      "ami_name": "nomad-consul-windowsserver2019-{{isotime | clean_ami_name}}",
+      "ami_description": "Windows Server 2019 Core with Nomad, Consul, and Docker EE installed.",
+      "region": "{{user `aws_region`}}",
+      "instance_type": "{{user `ec2_instance_type`}}",
+      "profile": "{{user `aws_profile`}}",
+      "vpc_id": "{{user `aws_vpc_id`}}",
+      "subnet_id": "{{user `aws_subnet_id`}}",
+      "associate_public_ip_address": true,
+      "skip_region_validation": true,
+      "type": "amazon-ebs",
+      "source_ami_filter": {
+       "filters": {
+         "virtualization-type": "hvm",
+         "architecture": "x86_64",
+         "name": "Windows_Server-2019-English-Core-ContainersLatest-*",
+         "root-device-type": "ebs"
+       },
+       "owners": [
+         "amazon"
+       ],
+       "most_recent": true
+      },
+      "user_data_file": "{{template_dir}}/SetupWinRm.ps1",
+      "communicator": "winrm",
+      "winrm_username": "Administrator",
+      "winrm_use_ssl": true,
+      "winrm_insecure": true,
       "tags": {
           "Team": "odin-platform"
       }
@@ -67,7 +101,7 @@
         "nomad-consul-ubuntu18"
       ]
     },
-      {
+    {
       "type": "shell",
       "environment_vars": [
         "NOMAD_VERSION={{user `nomad_version`}}",
@@ -77,6 +111,37 @@
       "script": "{{template_dir}}/setup_nomad_consul.sh",
       "only": [
         "nomad-consul-ubuntu18"
+      ]
+    },
+    {
+      "type": "powershell",
+      "environment_vars": [
+        "NOMAD_VERSION={{user `nomad_version`}}",
+        "CONSUL_VERSION={{user `consul_version`}}",
+        "VerbosePreference=Continue"
+      ],
+      "script": "{{template_dir}}/Install-NomadConsul.ps1",
+      "only": [
+        "nomad-consul-windowsserver2019"
+      ]
+    },
+    {
+      "type": "powershell",
+      "inline": [
+        "docker pull mcr.microsoft.com/windows/servercore:ltsc2019"
+      ],
+      "only": [
+        "nomad-consul-windowsserver2019"
+      ]
+    },
+    {
+      "type": "powershell",
+      "inline": [
+        "C:/ProgramData/Amazon/EC2-Windows/Launch/Scripts/InitializeInstance.ps1 -Schedule",
+        "C:/ProgramData/Amazon/EC2-Windows/Launch/Scripts/SysprepInstance.ps1 -NoShutdown"
+      ],
+      "only": [
+        "nomad-consul-windowsserver2019"
       ]
     }
   ]

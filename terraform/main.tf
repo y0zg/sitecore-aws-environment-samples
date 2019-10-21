@@ -23,6 +23,22 @@ data "aws_ami" "nomad_consul" {
   }
 }
 
+data "aws_ami" "nomad_consul_windows" {
+  most_recent = true
+
+  owners = ["self"]
+
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name = "name"
+    values = ["nomad-consul-windowsserver2019-*"]
+  }
+}
+
 locals {
   asore_tsunami_ip = "128.76.39.70/32"
 }
