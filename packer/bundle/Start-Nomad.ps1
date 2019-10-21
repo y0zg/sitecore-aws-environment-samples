@@ -1,5 +1,8 @@
+$NomadBinaryPath = 'c:\services\nomad\nomad.exe'
 $ConfigPath = 'c:\services\nomad\config\default.hcl'
 $DataPath = 'c:\services\nomad\data'
+$StdOutLogPath = 'c:\services\nomad\stdout.log'
+$StdErrLogPath = 'c:\services\nomad\stderr.log'
 
 $EC2MetadataUrl = 'http://169.254.169.254/latest/meta-data'
 $EC2DynamicDataUrl = 'http://169.254.169.254/latest/dynamic'
@@ -66,7 +69,13 @@ consul {
     Set-Content -Path $ConfigPath -Value $Config
 }
 
-Initialize-Configuration
+function Register-Service {
+    nssm.exe install nomad "$NomadBinaryPath" "agent -config $ConfigPath -data-dir $DataPath"
+    nssm.exe set nomad AppStdout $StdOutLogPath
+    nssm.exe set nomad AppStderr $StdErrLogPath
+    nssm.exe start nomad
+}
 
-c:\services\nomad\nomad.exe agent -config $ConfigPath -data-dir $DataPath
+Initialize-Configuration
+Register-Service
 

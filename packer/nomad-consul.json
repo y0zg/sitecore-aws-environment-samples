@@ -136,7 +136,7 @@
       "type": "powershell",
       "inline": [
         "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1')) | Out-Null",
-        "choco install -y awscli jq"
+        "choco install -y nssm"
       ],
       "only": [
         "nomad-consul-windowsserver2019"
