@@ -134,6 +134,36 @@ data "template_file" "user_data_consul_client_win" {
   }
 }
 
+resource "aws_security_group" "allow_rdp_tsunami" {
+  name = "allow_rdp_tsunami"
+  description = "Allow RDP from Tsunami network"
+  vpc_id = module.vpc.vpc_id
+
+  ingress {
+    from_port = 3389
+    to_port = 3389
+    protocol = "tcp"
+
+    cidr_blocks = [
+      "128.76.39.70/32"
+    ]
+  }
+}
+
+resource "aws_security_group" "allow_http_healthchecks" {
+  name = "allow_healthchecks_from_nlb"
+  description = "Allow HTTP health checks from NLB"
+  vpc_id = module.vpc.vpc_id
+
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
 module "clients" {
   source = "github.com/hashicorp/terraform-aws-nomad//modules/nomad-cluster?ref=v0.5.0"
 
@@ -156,6 +186,8 @@ module "clients" {
   vpc_id = module.vpc.vpc_id
   subnet_ids = module.vpc.public_subnets
 
+  health_check_type = "ELB"
+
   allowed_ssh_cidr_blocks = [
     "128.76.39.70/32"
   ]
@@ -167,6 +199,11 @@ module "clients" {
 
   ssh_key_name = var.ssh_key_name
 
+  security_groups = [
+    "${aws_security_group.allow_http_healthchecks.id}",
+    "${aws_security_group.allow_rdp_tsunami.id}"
+  ]
+
   tags = [
     {
       key = "Team"
@@ -174,6 +211,55 @@ module "clients" {
       propagate_at_launch = true
     }
   ]
+}
+
+resource "aws_lb_target_group" "nomad_clients" {
+  name     = "nomad-client-tg"
+  port     = 80
+  target_type = "instance"
+  protocol = "TCP"
+  vpc_id   = module.vpc.vpc_id
+
+  stickiness {
+    type = "lb_cookie"
+    enabled = false
+  }
+
+  tags = {
+    Team = "odin-platform"
+  }
+}
+
+data "aws_autoscaling_group" "clients" {
+  name = module.clients.asg_name
+}
+
+resource "aws_lb" "ingress" {
+  name = "nomad-clients-ingress"
+  internal = false
+  load_balancer_type = "network"
+  subnets = module.vpc.public_subnets
+
+  tags = {
+    Team = "odin-platform"
+  }
+}
+
+# Create a new ALB Target Group attachment
+resource "aws_autoscaling_attachment" "asg_attachment_bar" {
+  autoscaling_group_name = module.clients.asg_name
+  alb_target_group_arn   = "${aws_lb_target_group.nomad_clients.arn}"
+}
+
+resource "aws_lb_listener" "front_end" {
+  load_balancer_arn = "${aws_lb.ingress.arn}"
+  port = "80"
+  protocol = "TCP"
+
+  default_action {
+    type = "forward"
+    target_group_arn = "${aws_lb_target_group.nomad_clients.arn}"
+  }
 }
 
 module "security_group_rules_servers" {
