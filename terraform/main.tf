@@ -109,6 +109,16 @@ module "servers" {
       key = "Team"
       value = "odin-platform"
       propagate_at_launch = true
+    },
+    {
+      key = "nomad-role"
+      value = "server"
+      propagate_at_launch = true
+    },
+    {
+      key = "consul-role"
+      value = "server"
+      propagate_at_launch = true
     }
   ]
 }
