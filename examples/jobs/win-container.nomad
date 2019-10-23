@@ -15,9 +15,12 @@ job "sitecore" {
       resources {
         network {
           mbits = 10
-          port "iis" {}
+          port "http" {
+            static = 80
+          }
         }
       }
+
     }
   }
 }
