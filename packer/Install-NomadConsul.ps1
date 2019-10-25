@@ -1,6 +1,3 @@
-$env:NOMAD_VERSION = '0.9.5'
-$env:CONSUL_VERSION = '1.6.1'
-
 $DownloadPath = 'c:\bootstrap'
 $NomadPath = 'c:\services\nomad'
 $ConsulPath = 'c:\services\consul'
