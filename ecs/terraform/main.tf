@@ -26,6 +26,14 @@ module "vpc" {
 
   enable_nat_gateway = true
 
+  # Required to access DB from outside the VPC
+  create_database_subnet_group           = true
+  create_database_subnet_route_table     = true
+  create_database_internet_gateway_route = true
+
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
   tags = {
     Team = "odin-platform"
   }
