@@ -246,8 +246,10 @@ resource "aws_lb" "lb" {
 
 resource "aws_lb_listener" "frontend" {
   load_balancer_arn = aws_lb.lb.id
-  port              = 80
-  protocol          = "HTTP"
+  port              = 443
+  protocol          = "HTTPS"
+
+  certificate_arn = aws_acm_certificate_validation.cd_dev.certificate_arn
 
   default_action {
     target_group_arn = aws_lb_target_group.ecs_instances.id
@@ -255,3 +257,43 @@ resource "aws_lb_listener" "frontend" {
   }
 }
 
+data "aws_route53_zone" "nuuday" {
+  name         = "aws.nuuday.nu."
+  private_zone = false
+}
+
+resource "aws_route53_record" "cd_dev" {
+  zone_id = data.aws_route53_zone.nuuday.id
+  name    = "cd-dev.${data.aws_route53_zone.nuuday.name}"
+  type    = "CNAME"
+  ttl     = "300"
+
+  records = [aws_lb.lb.dns_name]
+}
+
+resource "aws_route53_record" "cert_validation" {
+  zone_id = data.aws_route53_zone.nuuday.id
+  name    = aws_acm_certificate.cd_dev.domain_validation_options.0.resource_record_name
+  type    = aws_acm_certificate.cd_dev.domain_validation_options.0.resource_record_type
+  ttl     = "60"
+
+  records = [aws_acm_certificate.cd_dev.domain_validation_options.0.resource_record_value]
+}
+
+resource "aws_acm_certificate" "cd_dev" {
+  domain_name       = aws_route53_record.cd_dev.fqdn
+  validation_method = "DNS"
+
+  tags = {
+    Team = "odin-platform"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "cd_dev" {
+  certificate_arn         = aws_acm_certificate.cd_dev.arn
+  validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
+}
