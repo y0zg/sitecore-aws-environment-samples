@@ -314,13 +314,13 @@ resource "aws_acm_certificate_validation" "cd_dev" {
 module "rds" {
   source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.5.0"
 
-  identifier = "${local.cluster_name}-dev"
+  identifier = "${local.cluster_name}-db"
 
   engine               = "sqlserver-web"
   engine_version       = "14.00.3192.2.v1"
   major_engine_version = "14.00"
   instance_class       = "db.m5.large"
-  allocated_storage    = 21
+  allocated_storage    = 20
 
   maintenance_window = "Mon:00:00-Mon:03:00"
   backup_window      = "03:00-06:00"
