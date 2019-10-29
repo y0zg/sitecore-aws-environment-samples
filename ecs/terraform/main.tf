@@ -98,8 +98,11 @@ resource "aws_ecs_task_definition" "iis" {
 [
 	{
 		"name": "iis",
-    "image": "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019",
-		"memory": 128,
+    "image": "mcr.microsoft.com/dotnet/framework/samples:aspnetapp",
+    "cpu": 512,
+    "memory": 2048,
+    "entryPoint": ["powershell", "-Command"],
+    "command": ["c:\\ServiceMonitor.exe w3svc"],
 		"portMappings": [
 			{
 				"containerPort": 80
