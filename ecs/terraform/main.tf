@@ -23,7 +23,7 @@ module "vpc" {
   private_subnets = ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
   public_subnets  = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
 
-  enable_nat_gateway = false # this is faster, but should be "true" for real
+  enable_nat_gateway = true
 
   tags = {
     Team = "odin-platform"
@@ -191,14 +191,13 @@ module "ecs_instances" {
   ]
 
   asg_name             = "${local.cluster_name}-asg"
-  vpc_zone_identifier  = module.vpc.public_subnets
+  vpc_zone_identifier  = module.vpc.private_subnets
   health_check_type    = "EC2"
   min_size             = 3
   max_size             = 6
   desired_capacity     = 3
   iam_instance_profile = data.aws_iam_role.ecs_instance.id
   key_name             = "ASORE"
-  #target_group_arns    = [aws_lb_target_group.ecs_instances.arn]
 
   user_data = data.template_file.user_data_windows.rendered
 
