@@ -19,9 +19,10 @@ module "vpc" {
 
   cidr = "10.1.0.0/16"
 
-  azs             = ["eu-north-1a", "eu-north-1b", "eu-north-1c"]
-  private_subnets = ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
-  public_subnets  = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
+  azs              = ["eu-north-1a", "eu-north-1b", "eu-north-1c"]
+  private_subnets  = ["10.1.1.0/24", "10.1.2.0/24", "10.1.3.0/24"]
+  public_subnets   = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
+  database_subnets = ["10.1.20.0/24", "10.1.21.0/24", "10.1.22.0/24"]
 
   enable_nat_gateway = true
 
@@ -296,4 +297,35 @@ resource "aws_acm_certificate" "cd_dev" {
 resource "aws_acm_certificate_validation" "cd_dev" {
   certificate_arn         = aws_acm_certificate.cd_dev.arn
   validation_record_fqdns = [aws_route53_record.cert_validation.fqdn]
+}
+
+# Database
+module "rds" {
+  source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.5.0"
+
+  identifier = "${local.cluster_name}-dev"
+
+  engine               = "sqlserver-web"
+  engine_version       = "14.00.3192.2.v1"
+  major_engine_version = "14.00"
+  instance_class       = "db.m5.large"
+  allocated_storage    = 21
+
+  maintenance_window = "Mon:00:00-Mon:03:00"
+  backup_window      = "03:00-06:00"
+
+  name     = null # see 'identifier'
+  username = "demouser"
+  password = "YourPwdShouldBeLongAndSecure!"
+  port     = "1433"
+
+  subnet_ids             = module.vpc.database_subnets
+  vpc_security_group_ids = [aws_security_group.allow_all_internal.id]
+  publicly_accessible    = true
+  timezone               = "Central Standard Time"
+  family                 = "sqlserver-web-14.0"
+
+  tags = {
+    Team = "odin-platform"
+  }
 }
