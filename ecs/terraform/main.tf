@@ -182,7 +182,7 @@ module "ecs_instances" {
 
   name          = "${local.cluster_name}-asg"
   image_id      = data.aws_ami.windows_ecs.image_id
-  instance_type = "t3.medium"
+  instance_type = "m5.xlarge"
   security_groups = [
     module.vpc.default_security_group_id,
     aws_security_group.allow_rdp.id,
