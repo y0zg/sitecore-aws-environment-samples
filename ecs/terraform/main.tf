@@ -131,7 +131,7 @@ resource "aws_ecs_service" "iis_sample" {
 }
 
 data "template_file" "user_data_windows" {
-  template = file("${path.module}/scripts/ec2-user-data-ecs-windows.script")
+  template = file("${path.module}/templates/ec2-user-data-ecs-windows.script")
   vars = {
     cluster_name = local.cluster_name
   }
