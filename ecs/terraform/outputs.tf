@@ -5,3 +5,8 @@ output "user_data_ecs_windows" {
 output "alb_fqdn" {
   value = aws_lb.lb.dns_name
 }
+
+output "cd_fqdn" {
+  value = aws_route53_record.cd.fqdn
+}
+
