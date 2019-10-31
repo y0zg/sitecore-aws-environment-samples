@@ -248,7 +248,7 @@ resource "aws_lb_listener" "frontend" {
   }
 }
 
-module "iis_sample" {
+module "service" {
   source = "./modules/service"
 
   name = "iis-sample"
@@ -277,35 +277,39 @@ resource "aws_security_group" "db" {
   }
 }
 
+resource "random_string" "db_password" {
+  length = 16
+}
+
 module "rds" {
   source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.5.0"
 
   identifier = "${local.cluster_name}-db"
 
+  family               = "sqlserver-web-14.0"
   engine               = "sqlserver-web"
   engine_version       = "14.00.3192.2.v1"
   major_engine_version = "14.00"
+  timezone             = "Central Standard Time"
   instance_class       = "db.m5.large"
   allocated_storage    = 20
+  license_model        = "license-included"
 
   maintenance_window = "Mon:00:00-Mon:03:00"
   backup_window      = "03:00-06:00"
 
   name     = null # see 'identifier'
-  username = "demouser"
-  password = "YourPwdShouldBeLongAndSecure!"
+  username = "dbuser"
+  password = random_string.db_password.result
   port     = "1433"
 
-  multi_az = false
-
-  subnet_ids             = module.vpc.database_subnets
+  multi_az            = false
+  publicly_accessible = true
+  subnet_ids          = module.vpc.database_subnets
   vpc_security_group_ids = [
     aws_security_group.allow_all_internal.id,
     aws_security_group.db.id,
   ]
-  publicly_accessible    = true
-  timezone               = "Central Standard Time"
-  family                 = "sqlserver-web-14.0"
 
   tags = {
     Team = "odin-platform"

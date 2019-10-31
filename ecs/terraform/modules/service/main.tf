@@ -7,6 +7,10 @@ data "aws_lb" "this" {
   arn = var.lb_arn
 }
 
+data "aws_lb_listener" "this" {
+  arn = var.lb_listener_arn
+}
+
 resource "aws_ecs_task_definition" "this" {
   family = var.name
 
@@ -54,6 +58,8 @@ resource "aws_ecs_service" "this" {
   }
 
   desired_count = 1
+
+  depends_on = [data.aws_lb_listener.this]
 }
 
 resource "aws_lb_listener_rule" "this" {
