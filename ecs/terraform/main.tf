@@ -83,30 +83,6 @@ resource "aws_iam_role_policy_attachment" "instance_role_cloudwatch" {
   policy_arn = aws_iam_policy.instance_role_cloudwatch.arn
 }
 
-resource "aws_ecs_task_definition" "iis" {
-  family = "iis"
-  #task_role_arn = "${data.aws_iam_role.ecs_service_role.arn}"
-  #execution_role_arn = "${data.aws_iam_role.ecs_service_role.arn}"
-
-  container_definitions = <<EOF
-[
-	{
-		"name": "iis",
-    "image": "mcr.microsoft.com/dotnet/framework/samples:aspnetapp",
-    "cpu": 512,
-    "memory": 2048,
-    "entryPoint": ["powershell", "-Command"],
-    "command": ["c:\\ServiceMonitor.exe w3svc"],
-		"portMappings": [
-			{
-				"containerPort": 80
-			}
-		]
-	}
-]
-EOF
-}
-
 module "cluster" {
   source = "github.com/terraform-aws-modules/terraform-aws-ecs?ref=v2.0.0"
 
@@ -115,76 +91,6 @@ module "cluster" {
     Team = "odin-platform"
   }
 }
-
-resource "aws_ecs_service" "iis_sample" {
-  name                               = "iis_sample"
-  cluster                            = module.cluster.this_ecs_cluster_id
-  launch_type                        = "EC2"
-  task_definition                    = aws_ecs_task_definition.iis.arn
-  deployment_minimum_healthy_percent = 100
-  health_check_grace_period_seconds  = 120
-
-  depends_on = [aws_lb.lb_external]
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.ecs_instances.id
-    container_name   = "iis"
-    container_port   = 80
-  }
-
-  ordered_placement_strategy {
-    type  = "spread"
-    field = "attribute:ecs.availability-zone"
-  }
-
-  desired_count = 1
-}
-
-# CD
-resource "aws_ecs_task_definition" "cd" {
-  family = "cd"
-
-  container_definitions = <<EOF
-[
-	{
-		"name": "cd",
-    "image": "anarsdk/sitecore-cd:9.2.0-attempt1",
-    "cpu": 512,
-    "memory": 2048,
-		"portMappings": [
-			{
-				"containerPort": 80
-			}
-		]
-	}
-]
-EOF
-}
-
-resource "aws_ecs_service" "cd" {
-  name                               = "cd"
-  cluster                            = module.cluster.this_ecs_cluster_id
-  launch_type                        = "EC2"
-  task_definition                    = aws_ecs_task_definition.cd.arn
-  deployment_minimum_healthy_percent = 100
-  health_check_grace_period_seconds  = 120
-
-  depends_on = [aws_lb.lb_external]
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.cd.id
-    container_name   = "cd"
-    container_port   = 80
-  }
-
-  ordered_placement_strategy {
-    type  = "spread"
-    field = "attribute:ecs.availability-zone"
-  }
-
-  desired_count = 1
-}
-
 
 data "template_file" "user_data_windows" {
   template = file("${path.module}/templates/ec2-user-data-ecs-windows.script")
@@ -285,32 +191,42 @@ resource "aws_security_group" "lb_external" {
   }
 }
 
-resource "aws_lb_target_group" "ecs_instances" {
+resource "aws_lb_target_group" "default" {
   name     = "${local.cluster_name}-instance-tg"
   port     = 8080
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
 }
 
-resource "aws_lb_target_group" "cd" {
-  name     = "${local.cluster_name}-cd-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = module.vpc.vpc_id
+# Self-signed cert for default LB listener
+resource "tls_private_key" "default" {
+  algorithm = "ECDSA"
 }
 
-resource "aws_lb_listener_rule" "cd" {
-  listener_arn = aws_lb_listener.frontend.arn
+resource "tls_self_signed_cert" "default" {
+  key_algorithm   = tls_private_key.default.algorithm
+  private_key_pem = tls_private_key.default.private_key_pem
 
-  action {
-    type = "forward"
-    target_group_arn = aws_lb_target_group.cd.arn
-  }
+  validity_period_hours = 356 * 24
 
-  condition {
-    field = "host-header"
-    values = [aws_route53_record.cd.fqdn]
+  allowed_uses = [
+    "key_encipherment",
+    "digital_signature",
+    "server_auth",
+  ]
+
+  dns_names = [aws_lb.lb_external.dns_name]
+
+  subject {
+    common_name  = aws_lb.lb_external.dns_name
+    organization = "GEN"
   }
+}
+
+resource "aws_iam_server_certificate" "default" {
+  name             = "${local.cluster_name}-ecs-default-cert"
+  certificate_body = tls_self_signed_cert.default.cert_pem
+  private_key      = tls_private_key.default.private_key_pem
 }
 
 resource "aws_lb" "lb_external" {
@@ -324,98 +240,26 @@ resource "aws_lb_listener" "frontend" {
   port              = 443
   protocol          = "HTTPS"
 
-  certificate_arn = aws_acm_certificate_validation.iis_sample.certificate_arn
+  certificate_arn = aws_iam_server_certificate.default.arn
 
   default_action {
-    target_group_arn = aws_lb_target_group.ecs_instances.id
+    target_group_arn = aws_lb_target_group.default.id
     type             = "forward"
   }
 }
 
-resource "aws_lb_listener_certificate" "cd" {
-  listener_arn = aws_lb_listener.frontend.arn
-  certificate_arn = aws_acm_certificate_validation.cd.certificate_arn
-}
+module "iis_sample" {
+  source = "./modules/service"
 
-data "aws_route53_zone" "nuuday" {
-  name         = "aws.nuuday.nu."
-  private_zone = false
-}
+  name = "iis-sample"
 
-resource "aws_route53_record" "iis_sample" {
-  zone_id = data.aws_route53_zone.nuuday.id
-  name    = "iis-sample-dev.${data.aws_route53_zone.nuuday.name}"
-  type    = "CNAME"
-  ttl     = "300"
-
-  records = [aws_lb.lb_external.dns_name]
-}
-
-resource "aws_route53_record" "cd" {
-  zone_id = data.aws_route53_zone.nuuday.id
-  name    = "cd-dev.${data.aws_route53_zone.nuuday.name}"
-  type    = "CNAME"
-  ttl     = "300"
-
-  records = [aws_lb.lb_external.dns_name]
-}
-
-
-# Certificate: IIS
-resource "aws_route53_record" "iis_cert_validation" {
-  zone_id = data.aws_route53_zone.nuuday.id
-  name    = aws_acm_certificate.iis_sample.domain_validation_options.0.resource_record_name
-  type    = aws_acm_certificate.iis_sample.domain_validation_options.0.resource_record_type
-  ttl     = "60"
-
-  records = [aws_acm_certificate.iis_sample.domain_validation_options.0.resource_record_value]
-}
-
-resource "aws_acm_certificate" "iis_sample" {
-  domain_name       = aws_route53_record.iis_sample.fqdn
-  validation_method = "DNS"
-
-  tags = {
-    Team = "odin-platform"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_acm_certificate_validation" "iis_sample" {
-  certificate_arn         = aws_acm_certificate.iis_sample.arn
-  validation_record_fqdns = [aws_route53_record.iis_cert_validation.fqdn]
-}
-
-# Certificate: CD
-resource "aws_route53_record" "cd_cert_validation" {
-  zone_id = data.aws_route53_zone.nuuday.id
-  name    = aws_acm_certificate.cd.domain_validation_options.0.resource_record_name
-  type    = aws_acm_certificate.cd.domain_validation_options.0.resource_record_type
-  ttl     = "60"
-
-  records = [aws_acm_certificate.cd.domain_validation_options.0.resource_record_value]
-}
-
-
-resource "aws_acm_certificate" "cd" {
-  domain_name       = aws_route53_record.cd.fqdn
-  validation_method = "DNS"
-
-  tags = {
-    Team = "odin-platform"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_acm_certificate_validation" "cd" {
-  certificate_arn         = aws_acm_certificate.cd.arn
-  validation_record_fqdns = [aws_route53_record.cd_cert_validation.fqdn]
+  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
+  vpc_id            = module.vpc.vpc_id
+  route53_zone_name = "aws.nuuday.nu."
+  dns_prefix        = "iis-sample-dev"
+  docker_image      = "mcr.microsoft.com/dotnet/framework/samples:aspnetapp"
+  lb_arn            = aws_lb.lb_external.id
+  lb_listener_arn   = aws_lb_listener.frontend.id
 }
 
 # Database
