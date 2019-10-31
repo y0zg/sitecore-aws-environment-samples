@@ -238,7 +238,7 @@ module "ecs_instances" {
   ]
 
   asg_name             = "${local.cluster_name}-asg"
-  vpc_zone_identifier  = module.vpc.public_subnets
+  vpc_zone_identifier  = module.vpc.private_subnets
   health_check_type    = "EC2"
   min_size             = 2
   max_size             = 2
