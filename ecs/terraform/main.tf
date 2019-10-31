@@ -124,6 +124,8 @@ resource "aws_ecs_service" "iis_sample" {
   deployment_minimum_healthy_percent = 100
   health_check_grace_period_seconds  = 120
 
+  depends_on = [aws_lb.lb_external]
+
   load_balancer {
     target_group_arn = aws_lb_target_group.ecs_instances.id
     container_name   = "iis"
@@ -166,6 +168,8 @@ resource "aws_ecs_service" "cd" {
   task_definition                    = aws_ecs_task_definition.cd.arn
   deployment_minimum_healthy_percent = 100
   health_check_grace_period_seconds  = 120
+
+  depends_on = [aws_lb.lb_external]
 
   load_balancer {
     target_group_arn = aws_lb_target_group.cd.id
