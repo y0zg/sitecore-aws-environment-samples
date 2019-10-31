@@ -202,15 +202,7 @@ resource "aws_security_group" "allow_all_internal" {
     to_port   = 0
     protocol  = "-1"
 
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["128.76.39.70/32"]
   }
 }
 
@@ -227,6 +219,11 @@ resource "aws_security_group" "allow_lb_ingress" {
   }
 }
 
+resource "aws_security_group" "ecs_instances" {
+  name   = "ecs_instances"
+  vpc_id = module.vpc.vpc_id
+}
+
 module "ecs_instances" {
   source = "github.com/terraform-aws-modules/terraform-aws-autoscaling?ref=v3.1.0"
 
@@ -235,6 +232,7 @@ module "ecs_instances" {
   instance_type = "t3.large"
   security_groups = [
     module.vpc.default_security_group_id,
+    aws_security_group.ecs_instances.id,
     aws_security_group.allow_lb_ingress.id,
     aws_security_group.allow_all_internal.id
   ]
@@ -421,6 +419,20 @@ resource "aws_acm_certificate_validation" "cd" {
 }
 
 # Database
+
+resource "aws_security_group" "db" {
+  name   = "allow_db"
+  vpc_id = module.vpc.vpc_id
+
+  ingress {
+    from_port = 1433
+    to_port   = 1433
+    protocol  = "tcp"
+
+    security_groups = [aws_security_group.ecs_instances.id]
+  }
+}
+
 module "rds" {
   source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.5.0"
 
@@ -445,6 +457,7 @@ module "rds" {
   subnet_ids             = module.vpc.database_subnets
   vpc_security_group_ids = [
     aws_security_group.allow_all_internal.id,
+    aws_security_group.db.id,
   ]
   publicly_accessible    = true
   timezone               = "Central Standard Time"
