@@ -19,3 +19,11 @@ output "nat_gateway_public_ips" {
   value = module.vpc.nat_public_ips
 }
 
+output "deployment_access_key_id" {
+  value = aws_iam_access_key.deployment.id
+}
+
+output "deployment_secret_access_key" {
+  value = aws_iam_access_key.deployment.secret
+}
+
