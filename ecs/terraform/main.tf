@@ -1,5 +1,11 @@
 terraform {
   required_version = ">= 0.12"
+
+  backend "s3" {
+    bucket = "odin-infra-dev"
+    key    = "infrastructure/sitecore-ecs"
+    region = "eu-central-1"
+  }
 }
 
 provider "aws" {
