@@ -114,7 +114,10 @@ resource "aws_security_group" "allow_all_internal" {
     to_port   = 0
     protocol  = "-1"
 
-    cidr_blocks = ["128.76.39.70/32"]
+    cidr_blocks = [
+      "128.76.39.70/32",
+      "193.3.142.51/32",
+    ]
   }
 }
 
