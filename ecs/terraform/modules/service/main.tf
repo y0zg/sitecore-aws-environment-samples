@@ -13,22 +13,7 @@ data "aws_lb_listener" "this" {
 
 resource "aws_ecs_task_definition" "this" {
   family = var.name
-
-  container_definitions = <<EOF
-[
-	{
-		"name": "${var.name}",
-    "image": "${var.docker_image}",
-    "cpu": 512,
-    "memory": 2048,
-		"portMappings": [
-			{
-				"containerPort": 80
-			}
-		]
-	}
-]
-EOF
+  container_definitions = var.container_definitions_json
 }
 
 resource "aws_lb_target_group" "this" {

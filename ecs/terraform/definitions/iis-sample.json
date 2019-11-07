@@ -1,0 +1,13 @@
+[
+	{
+		"name": "aspnet-sample",
+    "image": "mcr.microsoft.com/dotnet/framework/samples:aspnetapp",
+    "cpu": 512,
+    "memory": 2048,
+		"portMappings": [
+			{
+				"containerPort": 80
+			}
+		]
+	}
+]

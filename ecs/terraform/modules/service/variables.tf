@@ -8,9 +8,9 @@ variable "name" {
   description = "Name of the ECS Service."
 }
 
-variable "docker_image" {
-  type = string
-  description = "Name of the Docker image to run inside the service."
+variable "container_definitions_json" {
+  type        = string
+  description = "JSON describing the container definition. Reference can be found here: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html"
 }
 
 variable "route53_zone_name" {

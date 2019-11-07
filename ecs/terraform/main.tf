@@ -274,15 +274,14 @@ resource "aws_lb_listener" "frontend" {
 module "service" {
   source = "./modules/service"
 
-  name = "iis-sample"
-
-  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
-  vpc_id            = module.vpc.vpc_id
-  route53_zone_name = "aws.nuuday.nu."
-  dns_prefix        = "iis-sample-dev"
-  docker_image      = "mcr.microsoft.com/dotnet/framework/samples:aspnetapp"
-  lb_arn            = aws_lb.lb_external.id
-  lb_listener_arn   = aws_lb_listener.frontend.id
+  name                       = "aspnet-sample"
+  ecs_cluster_id             = module.cluster.this_ecs_cluster_id
+  vpc_id                     = module.vpc.vpc_id
+  route53_zone_name          = "aws.nuuday.nu."
+  dns_prefix                 = "iis-sample-dev"
+  container_definitions_json = file("${path.module}/definitions/iis-sample.json")
+  lb_arn                     = aws_lb.lb_external.id
+  lb_listener_arn            = aws_lb_listener.frontend.id
 }
 
 # Database

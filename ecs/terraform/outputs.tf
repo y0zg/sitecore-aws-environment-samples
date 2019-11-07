@@ -16,7 +16,7 @@ output "rds_password" {
 
 output "nat_gateway_public_ips" {
   description = "Public IPs of the provisioned NAT gateways"
-  value = module.vpc.nat_public_ips
+  value       = module.vpc.nat_public_ips
 }
 
 output "deployment_access_key_id" {
