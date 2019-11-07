@@ -6,8 +6,8 @@ output "service_fqdns" {
   value = module.service.*.service_fqdn
 }
 
-output "rds_endpoint" {
-  value = module.rds.this_db_instance_endpoint
+output "rds_host" {
+  value = module.rds.this_db_instance_address
 }
 
 output "rds_password" {

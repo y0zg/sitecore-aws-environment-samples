@@ -1,5 +1,5 @@
 data "aws_route53_zone" "this" {
-  name = var.route53_zone_name
+  name         = var.route53_zone_name
   private_zone = false
 }
 
@@ -54,7 +54,7 @@ resource "aws_ecs_service" "this" {
     field = "attribute:ecs.availability-zone"
   }
 
-  desired_count = 1
+  desired_count = 3
 
   depends_on = [data.aws_lb_listener.this]
 }
@@ -63,12 +63,12 @@ resource "aws_lb_listener_rule" "this" {
   listener_arn = var.lb_listener_arn
 
   action {
-    type = "forward"
+    type             = "forward"
     target_group_arn = aws_lb_target_group.this.arn
   }
 
   condition {
-    field = "host-header"
+    field  = "host-header"
     values = [aws_route53_record.this.fqdn]
   }
 }
@@ -112,6 +112,6 @@ resource "aws_acm_certificate_validation" "this" {
 }
 
 resource "aws_lb_listener_certificate" "this" {
-  listener_arn = var.lb_listener_arn
+  listener_arn    = var.lb_listener_arn
   certificate_arn = aws_acm_certificate_validation.this.certificate_arn
 }
