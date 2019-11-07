@@ -156,9 +156,9 @@ module "ecs_instances" {
   asg_name             = "${local.cluster_name}-asg"
   vpc_zone_identifier  = module.vpc.private_subnets
   health_check_type    = "EC2"
-  min_size             = 2
-  max_size             = 2
-  desired_capacity     = 2
+  min_size             = var.ecs_instance_count
+  max_size             = var.ecs_instance_count
+  desired_capacity     = var.ecs_instance_count
   iam_instance_profile = data.aws_iam_role.ecs_instance.id
   key_name             = "ASORE"
 
