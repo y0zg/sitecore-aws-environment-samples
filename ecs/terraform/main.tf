@@ -394,7 +394,12 @@ resource "aws_security_group" "db" {
 }
 
 resource "random_string" "db_password" {
-  length = 16
+  length           = 16
+  special          = true
+  override_special = "!"
+  min_special      = 2
+  min_upper        = 2
+  min_lower        = 2
 }
 
 module "rds" {
