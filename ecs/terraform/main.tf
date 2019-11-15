@@ -265,7 +265,8 @@ resource "aws_lb_listener" "frontend" {
   port              = 443
   protocol          = "HTTPS"
 
-  certificate_arn = aws_iam_server_certificate.default.arn
+  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn   = aws_iam_server_certificate.default.arn
 
   default_action {
     target_group_arn = aws_lb_target_group.default.id
