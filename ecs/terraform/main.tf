@@ -274,17 +274,108 @@ resource "aws_lb_listener" "frontend" {
   }
 }
 
-module "service" {
+module "cd" {
   source = "./modules/service"
 
-  name                       = "aspnet-sample"
-  ecs_cluster_id             = module.cluster.this_ecs_cluster_id
-  vpc_id                     = module.vpc.vpc_id
-  route53_zone_name          = "aws.nuuday.nu."
-  dns_prefix                 = "iis-sample-dev"
-  container_definitions_json = file("${path.module}/definitions/iis-sample.json")
-  lb_arn                     = aws_lb.lb_external.id
-  lb_listener_arn            = aws_lb_listener.frontend.id
+  name              = "cd"
+  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
+  vpc_id            = module.vpc.vpc_id
+  route53_zone_name = "aws.nuuday.nu."
+  dns_prefix        = "cd-dev"
+  lb_arn            = aws_lb.lb_external.id
+  lb_listener_arn   = aws_lb_listener.frontend.id
+
+  container_definitions_json = <<EOF
+[
+	{
+		"name": "cd",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-cd:9.2.0-windowsservercore-ltsc2019",
+    "memory": 1024,
+    "cpu": 500,
+    "entryPoint": ["powershell.exe", "-File"],
+    "command": ["c:\\startup.ps1"],
+    "environment":  [
+      {
+        "name": "WebConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Web"
+      },
+      {
+        "name": "SecurityConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+      },
+      {
+        "name": "FormsConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Experienceforms"
+      }
+    ],
+		"portMappings": [
+      {
+        "containerPort": 80
+      }
+    ]
+  }
+]
+EOF
+}
+
+module "cm" {
+  source = "./modules/service"
+
+  name              = "cm"
+  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
+  vpc_id            = module.vpc.vpc_id
+  route53_zone_name = "aws.nuuday.nu."
+  dns_prefix        = "cm-dev"
+  lb_arn            = aws_lb.lb_external.id
+  lb_listener_arn   = aws_lb_listener.frontend.id
+
+  container_definitions_json = <<EOF
+[
+	{
+		"name": "cm",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-cm:9.2.0-windowsservercore-ltsc2019",
+    "memory": 1024,
+    "cpu": 500,
+    "entryPoint": ["powershell.exe", "-File"],
+    "command": ["c:\\startup.ps1"],
+    "environment":  [
+      {
+        "name": "CoreConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+      },
+      {
+        "name": "SecurityConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+      },
+      {
+        "name": "MasterConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Master"
+      },
+      {
+        "name": "WebConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Web"
+      },
+      {
+        "name": "FormsConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Experienceforms"
+      },
+      {
+        "name": "SISSecret",
+        "value": "klaskd5!!!@"
+      },
+      {
+        "name": "SISConnectionString",
+        "value": "https://l-sis.internal.yousee.dk"
+      }
+    ],
+		"portMappings": [
+      {
+        "containerPort": 80
+      }
+    ]
+  }
+]
+EOF
 }
 
 # Database
