@@ -125,13 +125,13 @@ resource "aws_security_group" "allow_all_internal" {
   }
 }
 
-resource "aws_security_group" "allow_lb_ingress" {
+resource "aws_security_group" "allow_lb_healthchecks" {
   name   = "allow_lb_ingress"
   vpc_id = module.vpc.vpc_id
 
   ingress {
     from_port = 0
-    to_port   = 65535
+    to_port   = 0
     protocol  = "tcp"
 
     security_groups = [aws_security_group.lb_external.id]
@@ -153,8 +153,7 @@ module "ecs_instances" {
   security_groups = [
     module.vpc.default_security_group_id,
     aws_security_group.ecs_instances.id,
-    aws_security_group.allow_lb_ingress.id,
-    aws_security_group.allow_all_internal.id
+    aws_security_group.allow_lb_healthchecks.id,
   ]
 
   asg_name             = "${local.cluster_name}-asg"
