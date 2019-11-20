@@ -125,10 +125,11 @@ resource "aws_security_group" "allow_all_internal" {
   }
 }
 
-resource "aws_security_group" "allow_lb_healthchecks" {
-  name   = "allow_lb_ingress"
+resource "aws_security_group" "ecs_instances" {
+  name   = "ecs_instances"
   vpc_id = module.vpc.vpc_id
 
+  # LB health checks
   ingress {
     from_port = 0
     to_port   = 0
@@ -136,11 +137,6 @@ resource "aws_security_group" "allow_lb_healthchecks" {
 
     security_groups = [aws_security_group.lb_external.id]
   }
-}
-
-resource "aws_security_group" "ecs_instances" {
-  name   = "ecs_instances"
-  vpc_id = module.vpc.vpc_id
 }
 
 module "ecs_instances" {
@@ -153,7 +149,6 @@ module "ecs_instances" {
   security_groups = [
     module.vpc.default_security_group_id,
     aws_security_group.ecs_instances.id,
-    aws_security_group.allow_lb_healthchecks.id,
   ]
 
   asg_name             = "${local.cluster_name}-asg"
