@@ -449,6 +449,11 @@ resource "random_string" "db_password" {
   min_lower        = 2
 }
 
+resource "aws_kms_key" "db" {
+  description = "Sitecore 9 DB at-rest-encryption"
+  is_enabled  = true
+}
+
 module "rds" {
   source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.5.0"
 
@@ -456,7 +461,7 @@ module "rds" {
 
   family               = "sqlserver-web-14.0"
   engine               = "sqlserver-web"
-  engine_version       = "14.00.3192.2.v1"
+  engine_version       = "14.00.3223.3.v1"
   major_engine_version = "14.00"
   timezone             = "Central Standard Time"
   instance_class       = "db.m5.large"
@@ -470,6 +475,10 @@ module "rds" {
   username = "dbuser"
   password = random_string.db_password.result
   port     = "1433"
+
+  # Encryption
+  storage_encrypted = true
+  kms_key_id        = aws_kms_key.db.arn
 
   multi_az            = false
   publicly_accessible = true
