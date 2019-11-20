@@ -13,6 +13,8 @@ provider "aws" {
   profile = "nuuday_digital_dev"
 }
 
+data "aws_region" "current" {}
+
 locals {
   cluster_name = "sitecore-dev"
 }
@@ -274,6 +276,43 @@ resource "aws_lb_listener" "frontend" {
   }
 }
 
+module "iis" {
+  source = "./modules/service"
+
+  name              = "iis"
+  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
+  vpc_id            = module.vpc.vpc_id
+  route53_zone_name = "aws.nuuday.nu."
+  dns_prefix        = "iis-dev"
+  lb_arn            = aws_lb.lb_external.id
+  lb_listener_arn   = aws_lb_listener.frontend.id
+
+  container_definitions_json = <<EOF
+[
+  {
+    "name": "iis",
+    "image": "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019",
+    "memory": 1024,
+    "cpu": 500,
+    "portMappings": [
+      {
+        "containerPort": 80
+      }
+    ]
+  }
+]
+EOF
+}
+
+resource "aws_cloudwatch_log_group" "cd" {
+  name              = "cd"
+  retention_in_days = 1
+
+  tags = {
+    Application = "CD"
+  }
+}
+
 module "cd" {
   source = "./modules/service"
 
@@ -294,6 +333,14 @@ module "cd" {
     "cpu": 500,
     "entryPoint": ["powershell.exe", "-File"],
     "command": ["c:\\startup.ps1"],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${aws_cloudwatch_log_group.cd.name}",
+        "awslogs-region": "${data.aws_region.current.name}",
+        "awslogs-stream-prefix": "awslogs-example"
+      }
+    },
     "environment":  [
       {
         "name": "WebConnectionString",
