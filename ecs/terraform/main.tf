@@ -285,13 +285,14 @@ resource "aws_lb_listener" "frontend" {
 module "iis" {
   source = "./modules/service"
 
-  name              = "iis"
-  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
-  vpc_id            = module.vpc.vpc_id
-  route53_zone_name = "aws.nuuday.nu."
-  dns_prefix        = "iis-dev"
-  lb_arn            = aws_lb.lb_external.id
-  lb_listener_arn   = aws_lb_listener.frontend.id
+  name               = "iis"
+  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
+  vpc_id             = module.vpc.vpc_id
+  route53_zone_name  = "aws.nuuday.nu."
+  dns_prefix         = "iis-dev"
+  lb_arn             = aws_lb.lb_external.id
+  lb_listener_arn    = aws_lb_listener.frontend.id
+  desired_task_count = 1
 
   container_definitions_json = <<EOF
 [
@@ -322,13 +323,14 @@ resource "aws_cloudwatch_log_group" "cd" {
 module "cd" {
   source = "./modules/service"
 
-  name              = "cd"
-  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
-  vpc_id            = module.vpc.vpc_id
-  route53_zone_name = "aws.nuuday.nu."
-  dns_prefix        = "cd-dev"
-  lb_arn            = aws_lb.lb_external.id
-  lb_listener_arn   = aws_lb_listener.frontend.id
+  name               = "cd"
+  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
+  vpc_id             = module.vpc.vpc_id
+  route53_zone_name  = "aws.nuuday.nu."
+  dns_prefix         = "cd-dev"
+  lb_arn             = aws_lb.lb_external.id
+  lb_listener_arn    = aws_lb_listener.frontend.id
+  desired_task_count = 1
 
   container_definitions_json = <<EOF
 [
@@ -374,13 +376,14 @@ EOF
 module "cm" {
   source = "./modules/service"
 
-  name              = "cm"
-  ecs_cluster_id    = module.cluster.this_ecs_cluster_id
-  vpc_id            = module.vpc.vpc_id
-  route53_zone_name = "aws.nuuday.nu."
-  dns_prefix        = "cm-dev"
-  lb_arn            = aws_lb.lb_external.id
-  lb_listener_arn   = aws_lb_listener.frontend.id
+  name               = "cm"
+  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
+  vpc_id             = module.vpc.vpc_id
+  route53_zone_name  = "aws.nuuday.nu."
+  dns_prefix         = "cm-dev"
+  lb_arn             = aws_lb.lb_external.id
+  lb_listener_arn    = aws_lb_listener.frontend.id
+  desired_task_count = 1
 
   container_definitions_json = <<EOF
 [

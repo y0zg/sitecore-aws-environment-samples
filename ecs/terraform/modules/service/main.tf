@@ -54,7 +54,7 @@ resource "aws_ecs_service" "this" {
     field = "attribute:ecs.availability-zone"
   }
 
-  desired_count = 3
+  desired_count = var.desired_task_count
 
   depends_on = [data.aws_lb_listener.this]
 }
