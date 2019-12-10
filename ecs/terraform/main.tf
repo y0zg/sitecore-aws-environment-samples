@@ -17,6 +17,11 @@ data "aws_region" "current" {}
 
 locals {
   cluster_name = "sitecore-dev"
+
+  common_tags = {
+    Team = "odin-platform"
+    billing = "odin-platform"
+  }
 }
 
 module "vpc" {
@@ -47,9 +52,7 @@ module "vpc" {
   enable_dns_hostnames = true
   enable_dns_support   = true
 
-  tags = {
-    Team = "odin-platform"
-  }
+  tags = local.common_tags
 }
 
 data "aws_ami" "windows_ecs" {
@@ -100,9 +103,7 @@ module "cluster" {
   source = "github.com/terraform-aws-modules/terraform-aws-ecs?ref=v2.0.0"
 
   name = local.cluster_name
-  tags = {
-    Team = "odin-platform"
-  }
+  tags = local.common_tags
 }
 
 data "template_file" "user_data_windows" {
@@ -165,13 +166,7 @@ module "ecs_instances" {
 
   user_data = data.template_file.user_data_windows.rendered
 
-  tags = [
-    {
-      key                 = "Team"
-      value               = "odin-platform",
-      propagate_at_launch = true
-    }
-  ]
+  tags_as_map = local.common_tags
 }
 
 # Ingress
@@ -253,6 +248,8 @@ resource "aws_lb" "lb_external" {
   name            = "${local.cluster_name}-lb"
   subnets         = module.vpc.public_subnets
   security_groups = [aws_security_group.lb_external.id]
+
+  tags = local.common_tags
 }
 
 resource "aws_lb_listener" "frontend_http" {
@@ -464,6 +461,8 @@ resource "random_string" "db_password" {
 resource "aws_kms_key" "db" {
   description = "Sitecore 9 DB at-rest-encryption"
   is_enabled  = true
+
+  tags = local.common_tags
 }
 
 module "rds" {
@@ -500,8 +499,6 @@ module "rds" {
     aws_security_group.db.id,
   ]
 
-  tags = {
-    Team = "odin-platform"
-  }
+  tags = local.common_tags
 }
 
