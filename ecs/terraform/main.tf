@@ -32,9 +32,12 @@ module "vpc" {
   public_subnets   = ["10.1.11.0/24", "10.1.12.0/24", "10.1.13.0/24"]
   database_subnets = ["10.1.20.0/24", "10.1.21.0/24", "10.1.22.0/24"]
 
+  # In a production setting we'd deploy a NAT gateway per AZ.
+  # We use a single one in this example to reduce the number of
+  # Elastic IP Addresses we consume in AWS.
   enable_nat_gateway     = true
-  single_nat_gateway     = false
-  one_nat_gateway_per_az = true
+  single_nat_gateway     = true
+  one_nat_gateway_per_az = false
 
   # Required to access DB from outside the VPC
   create_database_subnet_group           = true
