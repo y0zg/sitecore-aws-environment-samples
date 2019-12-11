@@ -123,7 +123,7 @@ resource "aws_security_group" "allow_all_internal" {
     protocol  = "-1"
 
     cidr_blocks = [
-      "128.76.39.70/32",
+      "128.76.39.202/32",
       "193.3.142.51/32",
     ]
   }
@@ -180,7 +180,7 @@ resource "aws_security_group" "lb_external" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = [
-      "128.76.39.70/32",
+      "128.76.39.202/32",
       "193.3.142.51/32",
     ]
   }
@@ -190,7 +190,7 @@ resource "aws_security_group" "lb_external" {
     to_port   = 443
     protocol  = "tcp"
     cidr_blocks = [
-      "128.76.39.70/32",
+      "128.76.39.202/32",
       "193.3.142.51/32",
     ]
   }
