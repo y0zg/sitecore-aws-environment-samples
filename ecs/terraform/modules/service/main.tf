@@ -19,7 +19,7 @@ resource "aws_ecs_task_definition" "this" {
 resource "aws_lb_target_group" "this" {
   name       = "${var.name}-tg"
   port       = 8080
-  protocol   = "HTTP"
+  protocol   = var.target_group_protocol
   slow_start = 60
   vpc_id     = var.vpc_id
 
@@ -46,7 +46,7 @@ resource "aws_ecs_service" "this" {
   load_balancer {
     target_group_arn = aws_lb_target_group.this.id
     container_name   = var.name
-    container_port   = 80
+    container_port   = var.container_port
   }
 
   ordered_placement_strategy {

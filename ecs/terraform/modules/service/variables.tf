@@ -8,9 +8,21 @@ variable "name" {
   description = "Name of the ECS Service."
 }
 
+variable "target_group_protocol" {
+  type = string
+  description = "Whether targets within a target group are reached using HTTP or HTTPS."
+  default = "HTTP"
+}
+
 variable "container_definitions_json" {
   type        = string
   description = "JSON describing the container definition. Reference can be found here: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html"
+}
+
+variable "container_port" {
+  type = number
+  description = "The port which the container listens for HTTP(S) traffic on."
+  default = 80
 }
 
 variable "desired_task_count" {
