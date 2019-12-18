@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# Expects the following environment variables to be set:
+#
+#   DB_HOST
+#       The FQDN pointing to the SQL Server instance.
+#
+#   DB_USER
+#       User with enough privileges to apply the DACPACs.
+#       Uses SQL authentication.
+#
+#   DB_PASSWORD
+#       Password for authenticating the above DB_USER.
+
 SQLPACKAGE_URL="https://download.microsoft.com/download/7/5/d/75d3ba2d-2f6b-46e7-a0ef-3eaba605e935/sqlpackage-linux-x64-en-US-15.0.4573.2.zip"
 SQLPACKAGE="$(pwd)/sqlpackage/sqlpackage"
 DACPAC_FILES="$(pwd)/dacpac/*.dacpac"
