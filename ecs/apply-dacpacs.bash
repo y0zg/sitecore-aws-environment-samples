@@ -5,7 +5,7 @@ SQLPACKAGE="$(pwd)/sqlpackage/sqlpackage"
 DACPAC_FILES="$(pwd)/dacpac/*.dacpac"
 
 curl -o sqlpackage.zip $SQLPACKAGE_URL
-unzip sqlpackage.zip -d $(pwd)/sqlpackage
+unzip -o sqlpackage.zip -d $(pwd)/sqlpackage
 chmod +x $SQLPACKAGE
 
 for filepath in $DACPAC_FILES; do
