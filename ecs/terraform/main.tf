@@ -282,6 +282,13 @@ resource "aws_lb_listener" "frontend" {
   }
 }
 
+resource "aws_cloudwatch_log_group" "sitecore" {
+  name = "sitecore"
+  retention_in_days = 1
+
+  tags = local.common_tags
+}
+
 module "iis" {
   source = "./modules/service"
 
@@ -344,9 +351,9 @@ module "cd" {
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
-        "awslogs-group": "${aws_cloudwatch_log_group.cd.name}",
+        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
         "awslogs-region": "${data.aws_region.current.name}",
-        "awslogs-stream-prefix": "awslogs-example"
+        "awslogs-stream-prefix": "cd"
       }
     },
     "environment":  [
@@ -394,6 +401,14 @@ module "cm" {
     "cpu": 500,
     "entryPoint": ["powershell.exe", "-File"],
     "command": ["c:\\startup.ps1"],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
+        "awslogs-region": "${data.aws_region.current.name}",
+        "awslogs-stream-prefix": "cm"
+      }
+    },
     "environment":  [
       {
         "name": "CoreConnectionString",
