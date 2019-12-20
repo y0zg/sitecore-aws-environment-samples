@@ -18,6 +18,12 @@ data "aws_region" "current" {}
 locals {
   cluster_name = "sitecore-dev"
 
+  internal_cidr_blocks = [
+    "128.76.39.202/32",
+    "193.3.142.51/32",
+    "213.32.242.209/32",
+  ]
+
   common_tags = {
     Team = "odin-platform"
     billing = "odin-platform"
@@ -121,10 +127,7 @@ resource "aws_security_group" "allow_all_internal" {
     to_port   = 0
     protocol  = "-1"
 
-    cidr_blocks = [
-      "128.76.39.202/32",
-      "193.3.142.51/32",
-    ]
+    cidr_blocks = local.internal_cidr_blocks
   }
 }
 
@@ -178,20 +181,14 @@ resource "aws_security_group" "lb_external" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = [
-      "128.76.39.202/32",
-      "193.3.142.51/32",
-    ]
+    cidr_blocks = local.internal_cidr_blocks
   }
 
   ingress {
     from_port = 443
     to_port   = 443
     protocol  = "tcp"
-    cidr_blocks = [
-      "128.76.39.202/32",
-      "193.3.142.51/32",
-    ]
+    cidr_blocks = local.internal_cidr_blocks
   }
 
   egress {
