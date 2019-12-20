@@ -25,8 +25,7 @@ locals {
 }
 
 module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 2.0"
+  source  = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.21.0"
 
   name = local.cluster_name
 
