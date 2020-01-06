@@ -329,6 +329,43 @@ resource "aws_cloudwatch_log_group" "cd" {
   }
 }
 
+module "echo" {
+  source = "./modules/service"
+
+  name               = "echo"
+  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
+  vpc_id             = module.vpc.vpc_id
+  route53_zone_name  = "aws.nuuday.nu."
+  dns_prefix         = "echo"
+  lb_arn             = aws_lb.lb_external.id
+  lb_listener_arn    = aws_lb_listener.frontend.id
+  desired_task_count = 1
+
+  container_definitions_json = <<EOF
+[
+	{
+		"name": "echo",
+    "image": "anarsdk/echo:nanoserver2",
+    "memory": 128,
+    "cpu": 100,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
+        "awslogs-region": "${data.aws_region.current.name}",
+        "awslogs-stream-prefix": "echo"
+      }
+    },
+		"portMappings": [
+      {
+        "containerPort": 80
+      }
+    ]
+  }
+]
+EOF
+}
+
 module "cd" {
   source = "./modules/service"
 
