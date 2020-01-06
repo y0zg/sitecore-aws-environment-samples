@@ -471,16 +471,71 @@ module "cm" {
       },
       {
         "name": "SISSecret",
-        "value": "klaskd5!!!@"
+        "value": "exQphmdcBKC5y9JiWTJa"
       },
       {
         "name": "SISConnectionString",
-        "value": "https://l-sis.internal.yousee.dk"
+        "value": "https://sis-dev.aws.nuuday.nu"
       }
     ],
 		"portMappings": [
       {
         "containerPort": 80
+      }
+    ]
+  }
+]
+EOF
+}
+
+module "sis" {
+  source = "./modules/service"
+
+  name                  = "sis"
+  ecs_cluster_id        = module.cluster.this_ecs_cluster_id
+  vpc_id                = module.vpc.vpc_id
+  route53_zone_name     = "aws.nuuday.nu."
+  dns_prefix            = "sis-dev"
+  lb_arn                = aws_lb.lb_external.id
+  lb_listener_arn       = aws_lb_listener.frontend.id
+  target_group_protocol = "HTTPS"
+  container_port        = 44111
+  desired_task_count    = 1
+
+  container_definitions_json = <<EOF
+[
+	{
+		"name": "sis",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver:9.2.0-windowsservercore-ltsc2019",
+    "entryPoint": ["powershell.exe", "-File", "c:\\startup.ps1"],
+    "command": [],
+    "memory": 1024,
+    "cpu": 512,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
+        "awslogs-region": "${data.aws_region.current.name}",
+        "awslogs-stream-prefix": "sis"
+      }
+    },
+    "environment":  [
+      {
+        "name": "SecurityConnectionString",
+        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+      },
+      {
+        "name": "HostName",
+        "value": "sis-dev.aws.nuuday.nu"
+      },
+      {
+        "name": "AllowedCorsOriginsGroup",
+        "value": "http://cm-dev.aws.nuuday.nu|https://cm-dev.aws.nuuday.nu"
+      }
+    ],
+		"portMappings": [
+      {
+        "containerPort": 44111
       }
     ]
   }
