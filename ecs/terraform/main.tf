@@ -181,14 +181,20 @@ resource "aws_security_group" "lb_external" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = local.internal_cidr_blocks
+    cidr_blocks = concat(
+      local.internal_cidr_blocks,
+      [for ip in module.vpc.nat_public_ips : "${ip}/32"]
+    )
   }
 
   ingress {
     from_port = 443
     to_port   = 443
     protocol  = "tcp"
-    cidr_blocks = local.internal_cidr_blocks
+    cidr_blocks = concat(
+      local.internal_cidr_blocks,
+      [for ip in module.vpc.nat_public_ips : "${ip}/32"]
+    )
   }
 
   egress {
