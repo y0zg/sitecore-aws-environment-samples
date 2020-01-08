@@ -435,8 +435,8 @@ module "cm" {
 [
 	{
 		"name": "cm",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-cm:9.2.0-windowsservercore-ltsc2019",
-    "memory": 1024,
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-cm:9.2.0-f5f477c3",
+    "memory": 2048,
     "cpu": 500,
     "entryPoint": ["powershell.exe", "-File"],
     "command": ["c:\\startup.ps1"],
