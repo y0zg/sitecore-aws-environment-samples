@@ -1,3 +1,7 @@
 <powershell>
+# Attempts to drain the spot ECS instance *before* it's terminated.
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html
+[Environment]::SetEnvironmentVariable("ECS_ENABLE_SPOT_INSTANCE_DRAINING", "true", "Machine")
+
 Initialize-ECSAgent -Cluster ${cluster_name} -EnableTaskIAMRole -LoggingDrivers '["json-file","awslogs"]'
 </powershell>
