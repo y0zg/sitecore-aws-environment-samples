@@ -499,18 +499,17 @@ module "sis" {
   lb_arn                = aws_lb.lb_external.id
   lb_listener_arn       = aws_lb_listener.frontend.id
   target_group_protocol = "HTTPS"
-  container_port        = 44111
+  container_port        = 8443
   desired_task_count    = 1
 
   container_definitions_json = <<EOF
 [
 	{
 		"name": "sis",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver:9.2.0-windowsservercore-ltsc2019",
-    "entryPoint": ["powershell.exe", "-File", "c:\\startup.ps1"],
-    "command": [],
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver@sha256:0a5274b0a8adede9e5fa995f07cf9e410d2056c9fd1dabfe852155e59c252ebc",
+    "entryPoint": ["dotnet", "Sitecore.IdentityServer.Host.dll"],
     "memory": 1024,
-    "cpu": 512,
+    "cpu": 500,
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
@@ -521,21 +520,45 @@ module "sis" {
     },
     "environment":  [
       {
-        "name": "SecurityConnectionString",
+        "name": "SITECORE_URLS",
+        "value": "https://+:8443"
+      },
+      {
+        "name": "SITECORE_Host__LicenseFilePath",
+        "value": "c:\\license.xml"
+      },
+      {
+        "name": "SITECORE_Sitecore__IdentityServer__Clients__DefaultClient__AllowedCorsOrigins__AllowedCorsOriginsGroup1",
+        "value": "cm-dev.aws.nuuday.nu"
+      },
+      {
+        "name": "SITECORE_Sitecore__IdentityServer__SitecoreMembershipOptions__ConnectionString",
         "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
       },
       {
-        "name": "HostName",
-        "value": "sis-dev.aws.nuuday.nu"
+        "name": "SITECORE_Sitecore__IdentityServer__CertificateThumbprint",
+        "value": "8F66A6A2AE88D15DAB520FD986CED86CEE28A7E2"
       },
       {
-        "name": "AllowedCorsOriginsGroup",
-        "value": "http://cm-dev.aws.nuuday.nu|https://cm-dev.aws.nuuday.nu"
+        "name": "SITECORE_Sitecore__IdentityServer__CertificateStoreName",
+        "value": "LocalMachine"
+      },
+      {
+        "name": "SITECORE_Sitecore__IdentityServer__CertificateStoreLocation",
+        "value": "My"
+      },
+      {
+        "name": "SITECORE_Kestrel__Certificates__Default__Path",
+        "value": "c:\\https-cert.pfx"
+      },
+      {
+        "name": "SITECORE_Kestrel__Certificates__Default__Password",
+        "value": "hyggePassword1234"
       }
     ],
 		"portMappings": [
       {
-        "containerPort": 44111
+        "containerPort": 8443
       }
     ]
   }
