@@ -27,19 +27,17 @@ resource "aws_lb_target_group" "this" {
     enabled             = true
     protocol            = var.target_group_protocol
     port                = "traffic-port"
-    path                = "/"
+    path                = var.health_check_route
     interval            = 30
     timeout             = 5
     healthy_threshold   = 2
-    unhealthy_threshold = 10
+    unhealthy_threshold = 5
     matcher             = "200-499"
   }
 
   lifecycle {
     create_before_destroy = true
   }
-}
-
 }
 
 resource "aws_ecs_service" "this" {

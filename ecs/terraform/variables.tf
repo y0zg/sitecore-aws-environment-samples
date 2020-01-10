@@ -5,5 +5,5 @@ variable "ec2_instance_type" {
 
 variable "ecs_instance_count" {
   type    = number
-  default = 2
+  default = 1
 }

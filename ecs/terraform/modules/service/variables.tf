@@ -3,15 +3,21 @@ variable "ecs_cluster_id" {
   description = "ID of the ECS Cluster to deploy the service into."
 }
 
+variable "health_check_route" {
+  type        = string
+  description = "Route to use for HTTP health checks."
+  default     = "/"
+}
+
 variable "name" {
   type        = string
   description = "Name of the ECS Service."
 }
 
 variable "target_group_protocol" {
-  type = string
+  type        = string
   description = "Whether targets within a target group are reached using HTTP or HTTPS."
-  default = "HTTP"
+  default     = "HTTP"
 }
 
 variable "container_definitions_json" {
@@ -20,9 +26,9 @@ variable "container_definitions_json" {
 }
 
 variable "container_port" {
-  type = number
+  type        = number
   description = "The port which the container listens for HTTP(S) traffic on."
-  default = 80
+  default     = 80
 }
 
 variable "desired_task_count" {
@@ -33,6 +39,7 @@ variable "desired_task_count" {
 variable "route53_zone_name" {
   type        = string
   description = "Name of the Route53 Zone to create the CNAME for ECS Service. E.g.: aws.nuuday.nu. (including the leading '.')"
+  default     = null
 }
 
 variable "dns_prefix" {
