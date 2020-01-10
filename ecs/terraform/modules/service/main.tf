@@ -17,11 +17,11 @@ resource "aws_ecs_task_definition" "this" {
 }
 
 resource "aws_lb_target_group" "this" {
-  name       = "${var.name}-tg"
-  port       = 8080
-  protocol   = var.target_group_protocol
-  slow_start = 60
-  vpc_id     = var.vpc_id
+  name_prefix          = "${substr(var.name, 0, 5)}-"
+  port                 = 8080
+  protocol             = var.target_group_protocol
+  vpc_id               = var.vpc_id
+  deregistration_delay = 0
 
   health_check {
     enabled             = true
