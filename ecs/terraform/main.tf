@@ -498,6 +498,7 @@ module "sis" {
   dns_prefix            = "sis-dev"
   lb_arn                = aws_lb.lb_external.id
   lb_listener_arn       = aws_lb_listener.frontend.id
+  health_check_route    = "/.well-known/openid-configuration"
   target_group_protocol = "HTTPS"
   container_port        = 8443
   desired_task_count    = 1

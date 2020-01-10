@@ -34,6 +34,12 @@ resource "aws_lb_target_group" "this" {
     unhealthy_threshold = 10
     matcher             = "200-499"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 }
 
 resource "aws_ecs_service" "this" {
