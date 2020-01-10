@@ -15,6 +15,8 @@ validate ecs:
     cd ecs/terraform
     terraform init
     terraform plan -input=false
+  tags:
+  - linux
 
 validate nomad:
   stage: validate
@@ -26,4 +28,6 @@ validate nomad:
     cd hashistack/terraform
     terraform init
     terraform plan -input=false
+  tags:
+  - linux
 
