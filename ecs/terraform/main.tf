@@ -507,8 +507,7 @@ module "sis" {
 [
 	{
 		"name": "sis",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver@sha256:0a5274b0a8adede9e5fa995f07cf9e410d2056c9fd1dabfe852155e59c252ebc",
-    "entryPoint": ["dotnet", "Sitecore.IdentityServer.Host.dll"],
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver@sha256:22805f09f39c6fc82ad6c320d2a9f38af3b8a87dfed5f2dc594874f2a32d7a26",
     "memory": 1024,
     "cpu": 500,
     "logConfiguration": {
