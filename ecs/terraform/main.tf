@@ -676,7 +676,7 @@ resource "aws_kms_key" "db" {
 }
 
 module "rds" {
-  source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.5.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-rds?ref=v2.13.0"
 
   identifier = "${local.cluster_name}-db"
 
@@ -688,6 +688,7 @@ module "rds" {
   instance_class       = "db.m5.large"
   allocated_storage    = 20
   license_model        = "license-included"
+  ca_cert_identifier   = "rds-ca-2019"
 
   maintenance_window = "Mon:00:00-Mon:03:00"
   backup_window      = "03:00-06:00"
