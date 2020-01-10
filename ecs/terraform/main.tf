@@ -553,7 +553,7 @@ module "sis" {
       },
       {
         "name": "SITECORE_Kestrel__Certificates__Default__Password",
-        "value": "hyggePassword1234"
+        "value": "InternalCertDoesNotMatter"
       }
     ],
 		"portMappings": [
