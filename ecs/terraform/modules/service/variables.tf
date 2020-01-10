@@ -50,14 +50,17 @@ variable "dns_prefix" {
 variable "lb_arn" {
   type        = string
   description = "ARN of the ALB in which to create a listener for the ECS service."
+  default     = null
 }
 
 variable "lb_listener_arn" {
   type        = string
   description = "ARN of the LB listener to which the listener rule will be attached."
+  default     = null
 }
 
 variable "vpc_id" {
   type        = string
   description = "ID of the VPC in which the load balancer is deployed."
 }
+

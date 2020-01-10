@@ -25,13 +25,13 @@ locals {
   ]
 
   common_tags = {
-    Team = "odin-platform"
+    Team    = "odin-platform"
     billing = "odin-platform"
   }
 }
 
 module "vpc" {
-  source  = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.21.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.21.0"
 
   name = local.cluster_name
 
@@ -178,9 +178,9 @@ resource "aws_security_group" "lb_external" {
   vpc_id = module.vpc.vpc_id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port = 80
+    to_port   = 80
+    protocol  = "tcp"
     cidr_blocks = concat(
       local.internal_cidr_blocks,
       [for ip in module.vpc.nat_public_ips : "${ip}/32"]
@@ -275,8 +275,8 @@ resource "aws_lb_listener" "frontend" {
   port              = 443
   protocol          = "HTTPS"
 
-  ssl_policy        = "ELBSecurityPolicy-TLS-1-2-2017-01"
-  certificate_arn   = aws_iam_server_certificate.default.arn
+  ssl_policy      = "ELBSecurityPolicy-TLS-1-2-2017-01"
+  certificate_arn = aws_iam_server_certificate.default.arn
 
   default_action {
     target_group_arn = aws_lb_target_group.default.id
@@ -285,7 +285,7 @@ resource "aws_lb_listener" "frontend" {
 }
 
 resource "aws_cloudwatch_log_group" "sitecore" {
-  name = "sitecore"
+  name              = "sitecore"
   retention_in_days = 1
 
   tags = local.common_tags
