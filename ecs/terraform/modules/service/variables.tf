@@ -64,3 +64,8 @@ variable "vpc_id" {
   description = "ID of the VPC in which the load balancer is deployed."
 }
 
+variable "task_execution_role_arn" {
+  type        = string
+  description = "ARN of task execution role to use."
+  default     = null
+}

@@ -30,6 +30,73 @@ locals {
   }
 }
 
+# IAM resources necessary to allow Sitecore ECS tasks to
+# retrieve connection strings from AWS Secrets Manager
+
+# An AWS-managed policy which allows ECR and CloudWatch access
+data "aws_iam_policy" "managed_execution_policy" {
+  arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+# Explicitly allows access to retrieve connection strings from Secrets Manager,
+# and accessing the encryption key we're using.
+data "aws_iam_policy_document" "connection_string_secrets" {
+  statement {
+    actions = [
+      "secretsmanager:GetSecretValue",
+      "kms:Decrypt",
+    ]
+
+    resources = [
+      aws_secretsmanager_secret.core_connection_string.arn,
+      aws_secretsmanager_secret.master_connection_string.arn,
+      aws_secretsmanager_secret.web_connection_string.arn,
+      aws_secretsmanager_secret.security_connection_string.arn,
+      aws_secretsmanager_secret.forms_connection_string.arn,
+      aws_kms_key.db.arn,
+    ]
+  }
+}
+
+resource "aws_iam_policy" "connection_string_secrets" {
+  name        = "SitecoreConnectionStringsReadAccess"
+  path        = "/odin/"
+  description = "Allows retrieval of connection string secrets for Sitecore"
+  policy      = data.aws_iam_policy_document.connection_string_secrets.json
+}
+
+data "aws_iam_policy_document" "assume_policy" {
+  statement {
+    actions = [
+      "sts:AssumeRole",
+    ]
+
+    principals {
+      type        = "Service"
+      identifiers = ["ecs-tasks.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role" "task_execution_role" {
+  name = "SitecoreEcsTaskExecutionRole"
+  path = "/odin/"
+
+  assume_role_policy = data.aws_iam_policy_document.assume_policy.json
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_role_secrets" {
+  role       = aws_iam_role.task_execution_role.name
+  policy_arn = aws_iam_policy.connection_string_secrets.arn
+}
+
+resource "aws_iam_role_policy_attachment" "task_execution_role_builtin" {
+  role       = aws_iam_role.task_execution_role.name
+  policy_arn = data.aws_iam_policy.managed_execution_policy.arn
+}
+
+# Networking
+
 module "vpc" {
   source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.21.0"
 
@@ -372,14 +439,15 @@ EOF
 module "cd" {
   source = "./modules/service"
 
-  name               = "cd"
-  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
-  vpc_id             = module.vpc.vpc_id
-  route53_zone_name  = "aws.nuuday.nu."
-  dns_prefix         = "cd-dev"
-  lb_arn             = aws_lb.lb_external.id
-  lb_listener_arn    = aws_lb_listener.frontend.id
-  desired_task_count = 1
+  name                    = "cd"
+  ecs_cluster_id          = module.cluster.this_ecs_cluster_id
+  vpc_id                  = module.vpc.vpc_id
+  route53_zone_name       = "aws.nuuday.nu."
+  dns_prefix              = "cd-dev"
+  lb_arn                  = aws_lb.lb_external.id
+  lb_listener_arn         = aws_lb_listener.frontend.id
+  task_execution_role_arn = aws_iam_role.task_execution_role.arn
+  desired_task_count      = 1
 
   container_definitions_json = <<EOF
 [
@@ -398,20 +466,21 @@ module "cd" {
         "awslogs-stream-prefix": "cd"
       }
     },
-    "environment":  [
-      {
-        "name": "WebConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Web"
-      },
+    "secrets": [
       {
         "name": "SecurityConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
+      },
+      {
+        "name": "WebConnectionString",
+        "valueFrom": "${aws_secretsmanager_secret.web_connection_string.arn}"
       },
       {
         "name": "FormsConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Experienceforms"
+        "valueFrom": "${aws_secretsmanager_secret.forms_connection_string.arn}"
       }
     ],
+    "environment":  [],
 		"portMappings": [
       {
         "containerPort": 80
@@ -425,14 +494,15 @@ EOF
 module "cm" {
   source = "./modules/service"
 
-  name               = "cm"
-  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
-  vpc_id             = module.vpc.vpc_id
-  route53_zone_name  = "aws.nuuday.nu."
-  dns_prefix         = "cm-dev"
-  lb_arn             = aws_lb.lb_external.id
-  lb_listener_arn    = aws_lb_listener.frontend.id
-  desired_task_count = 1
+  name                    = "cm"
+  ecs_cluster_id          = module.cluster.this_ecs_cluster_id
+  vpc_id                  = module.vpc.vpc_id
+  route53_zone_name       = "aws.nuuday.nu."
+  dns_prefix              = "cm-dev"
+  lb_arn                  = aws_lb.lb_external.id
+  lb_listener_arn         = aws_lb_listener.frontend.id
+  task_execution_role_arn = aws_iam_role.task_execution_role.arn
+  desired_task_count      = 1
 
   container_definitions_json = <<EOF
 [
@@ -451,27 +521,29 @@ module "cm" {
         "awslogs-stream-prefix": "cm"
       }
     },
-    "environment":  [
+    "secrets": [
       {
         "name": "CoreConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+        "valueFrom": "${aws_secretsmanager_secret.core_connection_string.arn}"
       },
       {
         "name": "SecurityConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
       },
       {
         "name": "MasterConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Master"
+        "valueFrom": "${aws_secretsmanager_secret.master_connection_string.arn}"
       },
       {
         "name": "WebConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Web"
+        "valueFrom": "${aws_secretsmanager_secret.web_connection_string.arn}"
       },
       {
         "name": "FormsConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Experienceforms"
-      },
+        "valueFrom": "${aws_secretsmanager_secret.forms_connection_string.arn}"
+      }
+    ],
+    "environment":  [
       {
         "name": "SISSecret",
         "value": "exQphmdcBKC5y9JiWTJa"
@@ -494,17 +566,18 @@ EOF
 module "sis" {
   source = "./modules/service"
 
-  name                  = "sis"
-  ecs_cluster_id        = module.cluster.this_ecs_cluster_id
-  vpc_id                = module.vpc.vpc_id
-  route53_zone_name     = "aws.nuuday.nu."
-  dns_prefix            = "sis-dev"
-  lb_arn                = aws_lb.lb_external.id
-  lb_listener_arn       = aws_lb_listener.frontend.id
-  health_check_route    = "/.well-known/openid-configuration"
-  target_group_protocol = "HTTPS"
-  container_port        = 8443
-  desired_task_count    = 1
+  name                    = "sis"
+  ecs_cluster_id          = module.cluster.this_ecs_cluster_id
+  vpc_id                  = module.vpc.vpc_id
+  route53_zone_name       = "aws.nuuday.nu."
+  dns_prefix              = "sis-dev"
+  lb_arn                  = aws_lb.lb_external.id
+  lb_listener_arn         = aws_lb_listener.frontend.id
+  health_check_route      = "/.well-known/openid-configuration"
+  target_group_protocol   = "HTTPS"
+  container_port          = 8443
+  task_execution_role_arn = aws_iam_role.task_execution_role.arn
+  desired_task_count      = 1
 
   container_definitions_json = <<EOF
 [
@@ -521,6 +594,12 @@ module "sis" {
         "awslogs-stream-prefix": "sis"
       }
     },
+    "secrets": [
+      {
+        "name": "SITECORE_Sitecore__IdentityServer__SitecoreMembershipOptions__ConnectionString",
+        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
+      }
+    ],
     "environment":  [
       {
         "name": "SITECORE_URLS",
@@ -533,10 +612,6 @@ module "sis" {
       {
         "name": "SITECORE_Sitecore__IdentityServer__Clients__DefaultClient__AllowedCorsOrigins__AllowedCorsOriginsGroup1",
         "value": "cm-dev.aws.nuuday.nu"
-      },
-      {
-        "name": "SITECORE_Sitecore__IdentityServer__SitecoreMembershipOptions__ConnectionString",
-        "value": "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
       },
       {
         "name": "SITECORE_Sitecore__IdentityServer__CertificateThumbprint",
@@ -635,5 +710,62 @@ module "rds" {
   ]
 
   tags = local.common_tags
+}
+
+# Connection string secrets
+
+# Security DB
+resource "aws_secretsmanager_secret" "security_connection_string" {
+  name_prefix = "asore_security_connection_string_"
+  kms_key_id  = aws_kms_key.db.arn
+}
+
+resource "aws_secretsmanager_secret_version" "security_connection_string" {
+  secret_id     = aws_secretsmanager_secret.security_connection_string.id
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+}
+
+# Core DB
+resource "aws_secretsmanager_secret" "core_connection_string" {
+  name_prefix = "asore_core_connection_string_"
+  kms_key_id  = aws_kms_key.db.arn
+}
+
+resource "aws_secretsmanager_secret_version" "core_connection_string" {
+  secret_id     = aws_secretsmanager_secret.core_connection_string.id
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+}
+
+# Master DB
+resource "aws_secretsmanager_secret" "master_connection_string" {
+  name_prefix = "asore_master_connection_string_"
+  kms_key_id  = aws_kms_key.db.arn
+}
+
+resource "aws_secretsmanager_secret_version" "master_connection_string" {
+  secret_id     = aws_secretsmanager_secret.master_connection_string.id
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Master"
+}
+
+# Master DB
+resource "aws_secretsmanager_secret" "web_connection_string" {
+  name_prefix = "asore_web_connection_string_"
+  kms_key_id  = aws_kms_key.db.arn
+}
+
+resource "aws_secretsmanager_secret_version" "web_connection_string" {
+  secret_id     = aws_secretsmanager_secret.web_connection_string.id
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Web"
+}
+
+# Forms Experience DB
+resource "aws_secretsmanager_secret" "forms_connection_string" {
+  name_prefix = "asore_forms_connection_string_"
+  kms_key_id  = aws_kms_key.db.arn
+}
+
+resource "aws_secretsmanager_secret_version" "forms_connection_string" {
+  secret_id     = aws_secretsmanager_secret.forms_connection_string.id
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Experienceforms"
 }
 

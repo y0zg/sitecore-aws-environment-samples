@@ -3,5 +3,10 @@
 # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-agent-config.html
 [Environment]::SetEnvironmentVariable("ECS_ENABLE_SPOT_INSTANCE_DRAINING", "true", "Machine")
 
+# This will cause the task execution role to override whichever instance profile is applied
+# to the underlying EC2 instance.
+# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html
+[Environment]::SetEnvironmentVariable("ECS_ENABLE_AWSLOGS_EXECUTIONROLE_OVERRIDE", "true", "Machine")
+
 Initialize-ECSAgent -Cluster ${cluster_name} -EnableTaskIAMRole -LoggingDrivers '["json-file","awslogs"]'
 </powershell>

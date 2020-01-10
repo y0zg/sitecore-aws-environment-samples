@@ -14,6 +14,7 @@ data "aws_lb_listener" "this" {
 resource "aws_ecs_task_definition" "this" {
   family                = var.name
   container_definitions = var.container_definitions_json
+  execution_role_arn    = var.task_execution_role_arn
 }
 
 resource "aws_lb_target_group" "this" {
