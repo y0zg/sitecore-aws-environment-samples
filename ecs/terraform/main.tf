@@ -224,7 +224,7 @@ resource "tls_self_signed_cert" "default" {
   key_algorithm   = tls_private_key.default.algorithm
   private_key_pem = tls_private_key.default.private_key_pem
 
-  validity_period_hours = 356 * 24
+  validity_period_hours = 24 * 365 * 100
 
   allowed_uses = [
     "key_encipherment",
@@ -241,9 +241,12 @@ resource "tls_self_signed_cert" "default" {
 }
 
 resource "aws_iam_server_certificate" "default" {
-  name             = "${local.cluster_name}-ecs-default-cert"
   certificate_body = tls_self_signed_cert.default.cert_pem
   private_key      = tls_private_key.default.private_key_pem
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_lb" "lb_external" {
