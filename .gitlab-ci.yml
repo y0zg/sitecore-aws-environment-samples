@@ -2,7 +2,7 @@ stages:
 - validate
 
 variables:
-  TF_VERSION: "0.12.16"
+  TF_VERSION: "0.12.19"
   AWS_DEFAULT_REGION: eu-central-1
 
 validate ecs:
