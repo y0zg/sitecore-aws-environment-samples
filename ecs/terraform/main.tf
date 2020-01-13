@@ -378,8 +378,8 @@ module "iis" {
   {
     "name": "iis",
     "image": "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019",
-    "memory": 1024,
-    "cpu": 500,
+    "memory": 512,
+    "cpu": 100,
     "portMappings": [
       {
         "containerPort": 80
@@ -452,10 +452,10 @@ module "cd" {
   container_definitions_json = <<EOF
 [
 	{
-		"name": "cd",
+    "name": "cd",
     "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-cd:9.2.0-windowsservercore-ltsc2019",
     "memory": 1024,
-    "cpu": 500,
+    "cpu": 1000,
     "entryPoint": ["powershell.exe", "-File"],
     "command": ["c:\\startup.ps1"],
     "logConfiguration": {
@@ -583,9 +583,9 @@ module "sis" {
 [
 	{
 		"name": "sis",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver@sha256:22805f09f39c6fc82ad6c320d2a9f38af3b8a87dfed5f2dc594874f2a32d7a26",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver@sha256:eb35289c3c1a2b36ddd21fdd6cdc806d6e8283b42c3c74db5c0f31feec9e1f67",
     "memory": 1024,
-    "cpu": 500,
+    "cpu": 100,
     "logConfiguration": {
       "logDriver": "awslogs",
       "options": {
