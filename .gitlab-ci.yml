@@ -18,16 +18,3 @@ validate ecs:
   tags:
   - linux
 
-validate nomad:
-  stage: validate
-  image:
-    name: hashicorp/terraform:$TF_VERSION
-    entrypoint: [""]
-  variables:
-  script: |
-    cd hashistack/terraform
-    terraform init
-    terraform plan -input=false
-  tags:
-  - linux
-
