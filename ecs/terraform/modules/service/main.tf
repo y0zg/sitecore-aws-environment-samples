@@ -90,25 +90,34 @@ resource "aws_route53_record" "this" {
 
 # Certificate
 
-module "certificate" {
-  source = "github.com/terraform-aws-modules/terraform-aws-acm?ref=v2.5.0"
-
-  domain_name = aws_route53_record.this.fqdn
-  zone_id     = data.aws_route53_zone.this.id
-
-  wait_for_validation = true
+resource "aws_acm_certificate" "this" {
+  domain_name       = aws_route53_record.this.fqdn
+  validation_method = "DNS"
 
   tags = {
     Team = "odin-platform"
   }
-}
-
-resource "aws_lb_listener_certificate" "this" {
-  listener_arn    = var.lb_listener_arn
-  certificate_arn = module.certificate.this_acm_certificate_arn
 
   lifecycle {
     create_before_destroy = true
   }
 }
 
+resource "aws_route53_record" "this_cert_validation" {
+  zone_id = data.aws_route53_zone.this.id
+  name    = aws_acm_certificate.this.domain_validation_options.0.resource_record_name
+  type    = aws_acm_certificate.this.domain_validation_options.0.resource_record_type
+  ttl     = "60"
+
+  records = [aws_acm_certificate.this.domain_validation_options.0.resource_record_value]
+}
+
+resource "aws_acm_certificate_validation" "this" {
+  certificate_arn         = aws_acm_certificate.this.arn
+  validation_record_fqdns = [aws_route53_record.this_cert_validation.fqdn]
+}
+
+resource "aws_lb_listener_certificate" "this" {
+  listener_arn    = var.lb_listener_arn
+  certificate_arn = aws_acm_certificate_validation.this.certificate_arn
+}
