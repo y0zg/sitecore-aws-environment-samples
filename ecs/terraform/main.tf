@@ -545,6 +545,10 @@ module "cm" {
     ],
     "environment":  [
       {
+        "name": "CallbackAuthority",
+        "value": "https://cm-dev.aws.nuuday.nu"
+      },
+      {
         "name": "SISSecret",
         "value": "exQphmdcBKC5y9JiWTJa"
       },
