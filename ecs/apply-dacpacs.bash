@@ -14,23 +14,25 @@
 
 SQLPACKAGE_URL="https://download.microsoft.com/download/7/5/d/75d3ba2d-2f6b-46e7-a0ef-3eaba605e935/sqlpackage-linux-x64-en-US-15.0.4573.2.zip"
 SQLPACKAGE="$(pwd)/sqlpackage/sqlpackage"
+DACPAC_FILES="$(pwd)/dacpac/*.dacpac"
 
 curl -o sqlpackage.zip $SQLPACKAGE_URL
 unzip -o sqlpackage.zip -d $(pwd)/sqlpackage
 chmod +x $SQLPACKAGE
 
-function apply() {
-    local filepath=$1
-    local filename=$(basename -- "$1")
-    local dbname="${filename%.*}"
+for filepath in $DACPAC_FILES; do
 
-    echo $filename
-    echo $dbname
+    # Use filename as database name
+    # E.g. 'Sc_Web.dacpac' will be applied to database 'Sc_Web'
+    filename=$(basename -- "$filepath")
+    dbname="${filename%.*}"
+    
+    $SQLPACKAGE /a:Publish \
+        /sf:$filepath \
+        /tsn:$DB_HOST \
+        /tdn:$dbname \
+        /tu:$DB_USER \
+        /tp:"$DB_PASSWORD"
+done
 
-    $(pwd)/sqlpackage/sqlpackage /a:Publish /sf:$filepath /tsn:$DB_HOST /tdn:$dbname /tu:$DB_USER /tp:"$DB_PASSWORD"
-}
-
-export -f apply
-
-find "$(pwd)/dacpac" -type f -name '*.dacpac' -print0 | xargs -0 -I {} -P10 bash -c 'apply "{}"|tee "{}".log'
 
