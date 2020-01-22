@@ -15,3 +15,12 @@ output "nat_gateway_public_ips" {
   value       = module.vpc.nat_public_ips
 }
 
+output "grafana_access_key_id" {
+  value = aws_iam_access_key.grafana.id
+  description = "The access key ID Grafana's CloudWatch user"
+}
+
+output "grafana_secret_access_key" {
+  value = aws_iam_access_key.grafana.secret
+  description = "The secret access key for Grafana's CloudWatch user"
+}
