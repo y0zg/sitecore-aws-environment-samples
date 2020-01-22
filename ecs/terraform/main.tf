@@ -452,7 +452,7 @@ module "cd" {
 [
 	{
     "name": "cd",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-cd:9.2.0-windowsservercore-ltsc2019",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-cd:9.2.0-ef36fdcb",
     "memory": 1024,
     "cpu": 1000,
     "entryPoint": ["powershell.exe", "-File"],
@@ -494,22 +494,23 @@ module "cm" {
   source = "./modules/service"
 
   name                    = "cm"
-  ecs_cluster_id          = module.cluster.this_ecs_cluster_id
+  ecs_cluster_id          = aws_ecs_cluster.this.id
   vpc_id                  = module.vpc.vpc_id
   route53_zone_name       = "aws.nuuday.nu."
   dns_prefix              = "cm-dev"
   lb_arn                  = aws_lb.lb_external.id
   lb_listener_arn         = aws_lb_listener.frontend.id
   task_execution_role_arn = aws_iam_role.task_execution_role.arn
+  container_port          = 80
   desired_task_count      = 1
 
   container_definitions_json = <<EOF
 [
 	{
 		"name": "cm",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-cm:9.2.0-f5f477c3",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-cm:9.2.0-ef36fdcb",
     "memory": 2048,
-    "cpu": 500,
+    "cpu": 1000,
     "entryPoint": ["powershell.exe", "-File"],
     "command": ["c:\\startup.ps1"],
     "logConfiguration": {
@@ -586,7 +587,7 @@ module "sis" {
 [
 	{
 		"name": "sis",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/sitecore-xm1-identityserver@sha256:eb35289c3c1a2b36ddd21fdd6cdc806d6e8283b42c3c74db5c0f31feec9e1f67",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-identityserver:9.2.0-0f4ad759",
     "memory": 1024,
     "cpu": 100,
     "logConfiguration": {
