@@ -171,10 +171,9 @@ resource "aws_iam_role_policy_attachment" "instance_role_cloudwatch" {
   policy_arn = aws_iam_policy.instance_role_cloudwatch.arn
 }
 
-module "cluster" {
-  source = "github.com/terraform-aws-modules/terraform-aws-ecs?ref=v2.0.0"
-
+resource "aws_ecs_cluster" "this" {
   name = local.cluster_name
+
   tags = local.common_tags
 }
 
@@ -213,7 +212,7 @@ resource "aws_security_group" "ecs_instances" {
 }
 
 module "ecs_instances" {
-  source = "github.com/terraform-aws-modules/terraform-aws-autoscaling?ref=v3.1.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-autoscaling?ref=v3.4.0"
 
   name          = "${local.cluster_name}-asg"
   image_id      = data.aws_ami.windows_ecs.image_id
@@ -365,7 +364,7 @@ module "iis" {
   source = "./modules/service"
 
   name               = "iis"
-  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
+  ecs_cluster_id     = aws_ecs_cluster.this.id
   vpc_id             = module.vpc.vpc_id
   route53_zone_name  = "aws.nuuday.nu."
   dns_prefix         = "iis-dev"
@@ -403,7 +402,7 @@ module "echo" {
   source = "./modules/service"
 
   name               = "echo"
-  ecs_cluster_id     = module.cluster.this_ecs_cluster_id
+  ecs_cluster_id     = aws_ecs_cluster.this.id
   vpc_id             = module.vpc.vpc_id
   route53_zone_name  = "aws.nuuday.nu."
   dns_prefix         = "echo"
@@ -440,7 +439,7 @@ module "cd" {
   source = "./modules/service"
 
   name                    = "cd"
-  ecs_cluster_id          = module.cluster.this_ecs_cluster_id
+  ecs_cluster_id          = aws_ecs_cluster.this.id
   vpc_id                  = module.vpc.vpc_id
   route53_zone_name       = "aws.nuuday.nu."
   dns_prefix              = "cd-dev"
@@ -571,7 +570,7 @@ module "sis" {
   source = "./modules/service"
 
   name                    = "sis"
-  ecs_cluster_id          = module.cluster.this_ecs_cluster_id
+  ecs_cluster_id          = aws_ecs_cluster.this.id
   vpc_id                  = module.vpc.vpc_id
   route53_zone_name       = "aws.nuuday.nu."
   dns_prefix              = "sis-dev"
