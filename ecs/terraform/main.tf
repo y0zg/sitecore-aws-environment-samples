@@ -11,12 +11,13 @@ terraform {
 provider "aws" {
   region  = "eu-central-1"
   profile = "nuuday_digital_dev"
+  version = "2.45"
 }
 
 data "aws_region" "current" {}
 
 locals {
-  cluster_name = "sitecore-dev"
+  cluster_name = "asore-sc-dev"
 
   internal_cidr_blocks = [
     "128.76.39.202/32",
@@ -27,6 +28,7 @@ locals {
   common_tags = {
     Team    = "odin-platform"
     billing = "odin-platform"
+    Author  = "asore"
   }
 }
 

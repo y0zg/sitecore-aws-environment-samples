@@ -23,7 +23,7 @@ module "dev_certificate" {
   source  = "terraform-aws-modules/acm/aws"
   version = "~> v2.0"
 
-  domain_name  = local.domain_name
+  domain_name  = "*.${local.domain_name}"
   zone_id      = data.aws_route53_zone.this.id
 
   subject_alternative_names = [ 
