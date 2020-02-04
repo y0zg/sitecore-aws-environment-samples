@@ -638,6 +638,10 @@ module "sis" {
       {
         "name": "SITECORE_Kestrel__Certificates__Default__Password",
         "value": "InternalCertDoesNotMatter"
+      },
+      {
+        "name": "Environment",
+        "value": "Test"
       }
     ],
 		"portMappings": [
