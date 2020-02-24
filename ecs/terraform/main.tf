@@ -5,6 +5,7 @@ terraform {
     bucket = "odin-infra-dev"
     key    = "infrastructure/sitecore-ecs"
     region = "eu-central-1"
+    profile = "nuuday_digital_dev"
   }
 }
 
@@ -20,7 +21,7 @@ locals {
   cluster_name = "asore-sc-dev"
 
   internal_cidr_blocks = [
-    "128.76.39.202/32",
+    "83.92.190.99/32",
     "193.3.142.51/32",
     "213.32.242.209/32",
   ]
@@ -362,35 +363,6 @@ resource "aws_cloudwatch_log_group" "sitecore" {
   tags = local.common_tags
 }
 
-module "iis" {
-  source = "./modules/service"
-
-  name               = "iis"
-  ecs_cluster_id     = aws_ecs_cluster.this.id
-  vpc_id             = module.vpc.vpc_id
-  route53_zone_name  = "aws.nuuday.nu."
-  dns_prefix         = "iis-dev"
-  lb_arn             = aws_lb.lb_external.id
-  lb_listener_arn    = aws_lb_listener.frontend.id
-  desired_task_count = 1
-
-  container_definitions_json = <<EOF
-[
-  {
-    "name": "iis",
-    "image": "mcr.microsoft.com/windows/servercore/iis:windowsservercore-ltsc2019",
-    "memory": 512,
-    "cpu": 100,
-    "portMappings": [
-      {
-        "containerPort": 80
-      }
-    ]
-  }
-]
-EOF
-}
-
 resource "aws_cloudwatch_log_group" "cd" {
   name              = "cd"
   retention_in_days = 1
@@ -398,260 +370,6 @@ resource "aws_cloudwatch_log_group" "cd" {
   tags = {
     Application = "CD"
   }
-}
-
-module "echo" {
-  source = "./modules/service"
-
-  name               = "echo"
-  ecs_cluster_id     = aws_ecs_cluster.this.id
-  vpc_id             = module.vpc.vpc_id
-  route53_zone_name  = "aws.nuuday.nu."
-  dns_prefix         = "echo"
-  lb_arn             = aws_lb.lb_external.id
-  lb_listener_arn    = aws_lb_listener.frontend.id
-  desired_task_count = 1
-
-  container_definitions_json = <<EOF
-[
-	{
-		"name": "echo",
-    "image": "anarsdk/echo:nanoserver2",
-    "memory": 128,
-    "cpu": 100,
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
-        "awslogs-region": "${data.aws_region.current.name}",
-        "awslogs-stream-prefix": "echo"
-      }
-    },
-		"portMappings": [
-      {
-        "containerPort": 80
-      }
-    ]
-  }
-]
-EOF
-}
-
-module "cd" {
-  source = "./modules/service"
-
-  name                    = "cd"
-  ecs_cluster_id          = aws_ecs_cluster.this.id
-  vpc_id                  = module.vpc.vpc_id
-  route53_zone_name       = "aws.nuuday.nu."
-  dns_prefix              = "cd-dev"
-  lb_arn                  = aws_lb.lb_external.id
-  lb_listener_arn         = aws_lb_listener.frontend.id
-  task_execution_role_arn = aws_iam_role.task_execution_role.arn
-  desired_task_count      = 1
-
-  container_definitions_json = <<EOF
-[
-	{
-    "name": "cd",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-cd:9.2.0-ef36fdcb",
-    "memory": 1024,
-    "cpu": 1000,
-    "entryPoint": ["powershell.exe", "-File"],
-    "command": ["c:\\startup.ps1"],
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
-        "awslogs-region": "${data.aws_region.current.name}",
-        "awslogs-stream-prefix": "cd"
-      }
-    },
-    "secrets": [
-      {
-        "name": "SecurityConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
-      },
-      {
-        "name": "WebConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.web_connection_string.arn}"
-      },
-      {
-        "name": "FormsConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.forms_connection_string.arn}"
-      }
-    ],
-    "environment":  [],
-		"portMappings": [
-      {
-        "containerPort": 80
-      }
-    ]
-  }
-]
-EOF
-}
-
-module "cm" {
-  source = "./modules/service"
-
-  name                    = "cm"
-  ecs_cluster_id          = aws_ecs_cluster.this.id
-  vpc_id                  = module.vpc.vpc_id
-  route53_zone_name       = "aws.nuuday.nu."
-  dns_prefix              = "cm-dev"
-  lb_arn                  = aws_lb.lb_external.id
-  lb_listener_arn         = aws_lb_listener.frontend.id
-  task_execution_role_arn = aws_iam_role.task_execution_role.arn
-  container_port          = 80
-  desired_task_count      = 1
-
-  container_definitions_json = <<EOF
-[
-	{
-		"name": "cm",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-cm:9.2.0-ef36fdcb",
-    "memory": 2048,
-    "cpu": 1000,
-    "entryPoint": ["powershell.exe", "-File"],
-    "command": ["c:\\startup.ps1"],
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
-        "awslogs-region": "${data.aws_region.current.name}",
-        "awslogs-stream-prefix": "cm"
-      }
-    },
-    "secrets": [
-      {
-        "name": "CoreConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.core_connection_string.arn}"
-      },
-      {
-        "name": "SecurityConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
-      },
-      {
-        "name": "MasterConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.master_connection_string.arn}"
-      },
-      {
-        "name": "WebConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.web_connection_string.arn}"
-      },
-      {
-        "name": "FormsConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.forms_connection_string.arn}"
-      }
-    ],
-    "environment":  [
-      {
-        "name": "CallbackAuthority",
-        "value": "https://cm-dev.aws.nuuday.nu"
-      },
-      {
-        "name": "SISSecret",
-        "value": "exQphmdcBKC5y9JiWTJa"
-      },
-      {
-        "name": "SISConnectionString",
-        "value": "https://sis-dev.aws.nuuday.nu"
-      }
-    ],
-		"portMappings": [
-      {
-        "containerPort": 80
-      }
-    ]
-  }
-]
-EOF
-}
-
-module "sis" {
-  source = "./modules/service"
-
-  name                    = "sis"
-  ecs_cluster_id          = aws_ecs_cluster.this.id
-  vpc_id                  = module.vpc.vpc_id
-  route53_zone_name       = "aws.nuuday.nu."
-  dns_prefix              = "sis-dev"
-  lb_arn                  = aws_lb.lb_external.id
-  lb_listener_arn         = aws_lb_listener.frontend.id
-  health_check_route      = "/.well-known/openid-configuration"
-  target_group_protocol   = "HTTPS"
-  container_port          = 8443
-  task_execution_role_arn = aws_iam_role.task_execution_role.arn
-  desired_task_count      = 1
-
-  container_definitions_json = <<EOF
-[
-	{
-		"name": "sis",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm1-identityserver:9.2.0-0f4ad759",
-    "memory": 1024,
-    "cpu": 100,
-    "logConfiguration": {
-      "logDriver": "awslogs",
-      "options": {
-        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
-        "awslogs-region": "${data.aws_region.current.name}",
-        "awslogs-stream-prefix": "sis"
-      }
-    },
-    "secrets": [
-      {
-        "name": "SITECORE_Sitecore__IdentityServer__SitecoreMembershipOptions__ConnectionString",
-        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
-      }
-    ],
-    "environment":  [
-      {
-        "name": "SITECORE_URLS",
-        "value": "https://+:8443"
-      },
-      {
-        "name": "SITECORE_Host__LicenseFilePath",
-        "value": "c:\\license.xml"
-      },
-      {
-        "name": "SITECORE_Sitecore__IdentityServer__Clients__DefaultClient__AllowedCorsOrigins__AllowedCorsOriginsGroup1",
-        "value": "cm-dev.aws.nuuday.nu"
-      },
-      {
-        "name": "SITECORE_Sitecore__IdentityServer__CertificateThumbprint",
-        "value": "8F66A6A2AE88D15DAB520FD986CED86CEE28A7E2"
-      },
-      {
-        "name": "SITECORE_Sitecore__IdentityServer__CertificateStoreName",
-        "value": "LocalMachine"
-      },
-      {
-        "name": "SITECORE_Sitecore__IdentityServer__CertificateStoreLocation",
-        "value": "My"
-      },
-      {
-        "name": "SITECORE_Kestrel__Certificates__Default__Path",
-        "value": "c:\\https-cert.pfx"
-      },
-      {
-        "name": "SITECORE_Kestrel__Certificates__Default__Password",
-        "value": "InternalCertDoesNotMatter"
-      },
-      {
-        "name": "Environment",
-        "value": "Test"
-      }
-    ],
-		"portMappings": [
-      {
-        "containerPort": 8443
-      }
-    ]
-  }
-]
-EOF
 }
 
 # Database
@@ -733,7 +451,7 @@ resource "aws_secretsmanager_secret" "security_connection_string" {
 
 resource "aws_secretsmanager_secret_version" "security_connection_string" {
   secret_id     = aws_secretsmanager_secret.security_connection_string.id
-  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Core"
 }
 
 # Core DB
@@ -744,7 +462,7 @@ resource "aws_secretsmanager_secret" "core_connection_string" {
 
 resource "aws_secretsmanager_secret_version" "core_connection_string" {
   secret_id     = aws_secretsmanager_secret.core_connection_string.id
-  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Core"
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Core"
 }
 
 # Master DB
@@ -755,7 +473,7 @@ resource "aws_secretsmanager_secret" "master_connection_string" {
 
 resource "aws_secretsmanager_secret_version" "master_connection_string" {
   secret_id     = aws_secretsmanager_secret.master_connection_string.id
-  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Master"
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Master"
 }
 
 # Master DB
@@ -766,7 +484,7 @@ resource "aws_secretsmanager_secret" "web_connection_string" {
 
 resource "aws_secretsmanager_secret_version" "web_connection_string" {
   secret_id     = aws_secretsmanager_secret.web_connection_string.id
-  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Web"
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Web"
 }
 
 # Forms Experience DB
@@ -777,6 +495,6 @@ resource "aws_secretsmanager_secret" "forms_connection_string" {
 
 resource "aws_secretsmanager_secret_version" "forms_connection_string" {
   secret_id     = aws_secretsmanager_secret.forms_connection_string.id
-  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sc_Experienceforms"
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Experienceforms"
 }
 

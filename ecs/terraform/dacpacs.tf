@@ -13,7 +13,7 @@ resource "aws_ecs_task_definition" "this" {
 [
 	{
     "name": "dacpac",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/db-dacpac-init:windowsservercore-1809",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/db-dacpac-init:ltsc2019",
     "memory": 512,
     "cpu": 200,
     "logConfiguration": {
@@ -26,12 +26,12 @@ resource "aws_ecs_task_definition" "this" {
     },
     "environment": [
       {
-        "name": "DACPACS_S3_BUCKET",
+        "name": "DACPAC_S3_BUCKET",
         "value": "${data.aws_ssm_parameter.sitecore_packages_bucket.value}"
       },
       {
-        "name": "DACPACS_S3_PATH",
-        "value": "9.3.0"
+        "name": "DACPAC_S3_PATH",
+        "value": "dacpacs/9.3.0"
       },
       {
         "name": "DB_PASSWORD",
@@ -47,7 +47,7 @@ resource "aws_ecs_task_definition" "this" {
       },
       {
         "name": "DB_SUFFIX",
-        "value": "_Yes"
+        "value": ""
       }
     ]
   }

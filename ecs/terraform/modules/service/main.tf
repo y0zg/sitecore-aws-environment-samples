@@ -23,6 +23,7 @@ resource "aws_lb_target_group" "this" {
   protocol             = var.target_group_protocol
   vpc_id               = var.vpc_id
   deregistration_delay = 1
+  slow_start           = 30
 
   health_check {
     enabled             = true

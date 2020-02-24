@@ -1,6 +1,6 @@
 variable "ec2_instance_type" {
   type    = string
-  default = "m5.xlarge"
+  default = "m4.xlarge"
 }
 
 variable "ecs_instance_count" {
