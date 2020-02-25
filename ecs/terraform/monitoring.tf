@@ -47,7 +47,7 @@ resource "aws_iam_user" "grafana" {
 }
 
 resource "aws_iam_user_policy_attachment" "grafana_cloudwatch" {
-  user = aws_iam_user.grafana.name
+  user       = aws_iam_user.grafana.name
   policy_arn = aws_iam_policy.cloudwatch.arn
 }
 

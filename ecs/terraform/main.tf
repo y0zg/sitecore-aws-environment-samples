@@ -2,9 +2,9 @@ terraform {
   required_version = ">= 0.12"
 
   backend "s3" {
-    bucket = "odin-infra-dev"
-    key    = "infrastructure/sitecore-ecs"
-    region = "eu-central-1"
+    bucket  = "odin-infra-dev"
+    key     = "infrastructure/sitecore-ecs"
+    region  = "eu-central-1"
     profile = "nuuday_digital_dev"
   }
 }
@@ -56,6 +56,7 @@ data "aws_iam_policy_document" "connection_string_secrets" {
       aws_secretsmanager_secret.web_connection_string.arn,
       aws_secretsmanager_secret.security_connection_string.arn,
       aws_secretsmanager_secret.forms_connection_string.arn,
+      aws_secretsmanager_secret.sessions_connection_string.arn,
       aws_kms_key.db.arn,
     ]
   }
@@ -496,5 +497,16 @@ resource "aws_secretsmanager_secret" "forms_connection_string" {
 resource "aws_secretsmanager_secret_version" "forms_connection_string" {
   secret_id     = aws_secretsmanager_secret.forms_connection_string.id
   secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Experienceforms"
+}
+
+# Sessions DB
+resource "aws_secretsmanager_secret" "sessions_connection_string" {
+  name_prefix = "asore_sessions_connection_string_"
+  kms_key_id  = aws_kms_key.db.arn
+}
+
+resource "aws_secretsmanager_secret_version" "sessions_connection_string" {
+  secret_id     = aws_secretsmanager_secret.sessions_connection_string.id
+  secret_string = "Server=${module.rds.this_db_instance_address};User=${module.rds.this_db_instance_username};Password=${module.rds.this_db_instance_password};Database=Sitecore.Sessions"
 }
 

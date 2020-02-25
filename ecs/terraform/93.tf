@@ -19,7 +19,7 @@ module "cd" {
 [
 	{
     "name": "cd",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cd:9.3.0-e2d8fbc0",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cd:9.3.0-ac7426b3",
     "memory": 2048,
     "cpu": 1000,
     "logConfiguration": {
@@ -83,7 +83,7 @@ module "cm" {
 [
 	{
     "name": "cm",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cm:9.3.0-e2d8fbc0",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cm:9.3.0-ac7426b3",
     "memory": 2048,
     "cpu": 500,
     "logConfiguration": {
@@ -100,6 +100,10 @@ module "cm" {
         "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
       },
       {
+        "name": "SITECORE_ConnectionStrings_Core",
+        "valueFrom": "${aws_secretsmanager_secret.core_connection_string.arn}"
+      },
+      {
         "name": "SITECORE_ConnectionStrings_Web",
         "valueFrom": "${aws_secretsmanager_secret.web_connection_string.arn}"
       },
@@ -110,12 +114,16 @@ module "cm" {
       {
         "name": "SITECORE_ConnectionStrings_Master",
         "valueFrom": "${aws_secretsmanager_secret.master_connection_string.arn}"
+      },
+      {
+        "name": "SITECORE_ConnectionStrings_Session",
+        "valueFrom": "${aws_secretsmanager_secret.sessions_connection_string.arn}"
       }
     ],
     "environment":  [
       {
         "name": "SITECORE_CONFIGURATION",
-        "value": "TestCD"
+        "value": "TestCM"
       },
       {
         "name": "SITECORE_LICENSE",
@@ -128,11 +136,91 @@ module "cm" {
       {
         "name": "ENTRYPOINT_STDOUT_IIS_ACCESS_LOG_ENABLED",
         "value": "true"
+      },
+      {
+        "name": "SITECORE_FEDERATEDAUTHENTICATION_IDENTITY_SERVER_CALLBACKAUTHORITY",
+        "value": "https://cm-dev.aws.nuuday.nu"
+      },
+      {
+        "name": "SITECORE_IDENTITY_SERVER_AUTHORITY",
+        "value": "https://sis-dev.aws.nuuday.nu"
       }
     ],
 		"portMappings": [
       {
         "containerPort": 80
+      }
+    ]
+  }
+]
+EOF
+}
+
+module "sis" {
+  source = "./modules/service"
+
+  name                    = "sis"
+  ecs_cluster_id          = aws_ecs_cluster.this.id
+  vpc_id                  = module.vpc.vpc_id
+  route53_zone_name       = "aws.nuuday.nu."
+  dns_prefix              = "sis-dev"
+  lb_arn                  = aws_lb.lb_external.id
+  lb_listener_arn         = aws_lb_listener.frontend.id
+  target_group_protocol   = "HTTPS"
+  container_port          = 443
+  task_execution_role_arn = aws_iam_role.task_execution_role.arn
+  desired_task_count      = 1
+
+  container_definitions_json = <<EOF
+[
+	{
+    "name": "sis",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-identity:9.3.0-nanoserver-1809-ac7426b3",
+    "memory": 1024,
+    "cpu": 500,
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "${aws_cloudwatch_log_group.sitecore.name}",
+        "awslogs-region": "${data.aws_region.current.name}",
+        "awslogs-stream-prefix": "sis"
+      }
+    },
+    "secrets": [
+      {
+        "name": "SITECORE_Sitecore__IdentityServer__SitecoreMembershipOptions__ConnectionString",
+        "valueFrom": "${aws_secretsmanager_secret.security_connection_string.arn}"
+      }
+    ],
+    "environment":  [
+      {
+        "name": "SITECORE_ENVIRONMENT",
+        "value": "Test"
+      },
+      {
+        "name": "SITECORE_LICENSE",
+        "value": "${local.license}"
+      },
+      {
+        "name": "SITECORE_URLS",
+        "value": "https://+:443"
+      },
+      {
+        "name": "SITECORE_Kestrel__Certificates__Default__Path",
+        "value": "c:\\certificates\\identity.pfx"
+      },
+      {
+        "name": "SITECORE_Kestrel__Certificates__Default__Password",
+        "value": "Twelve4-4Cranial-Rag-kayo4-Ragweed-This8-grunge9-0Foss-7finalist-hubby"
+      },
+      {
+        "name": "SITECORE_Sitecore__IdentityServer__Clients__DefaultClient__AllowedCorsOrigins__AllowedCorsOriginsGroup1",
+        "value": "https://cm-dev.aws.nuuday.nu"
+      }
+    ],
+		"portMappings": [
+      {
+        "containerPort": 443
       }
     ]
   }
