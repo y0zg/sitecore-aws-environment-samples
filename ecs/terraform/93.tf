@@ -19,7 +19,7 @@ module "cd" {
 [
 	{
     "name": "cd",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cd:9.3.0-ac7426b3",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cd:9.3.0-4f6f5703",
     "memory": 2048,
     "cpu": 1000,
     "logConfiguration": {
@@ -83,7 +83,7 @@ module "cm" {
 [
 	{
     "name": "cm",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cm:9.3.0-ac7426b3",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-cm:9.3.0-4f6f5703",
     "memory": 2048,
     "cpu": 500,
     "logConfiguration": {
@@ -134,6 +134,10 @@ module "cm" {
         "value": "ContentManagement,Indexing"
       },
       {
+        "name": "SITECORE_VARIABLES_sourceFolder",
+        "value": "c:\\inetpub\\wwwroot\\App_Data\\unicorn"
+      },
+      {
         "name": "ENTRYPOINT_STDOUT_IIS_ACCESS_LOG_ENABLED",
         "value": "true"
       },
@@ -175,7 +179,7 @@ module "sis" {
 [
 	{
     "name": "sis",
-    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-identity:9.3.0-nanoserver-1809-ac7426b3",
+    "image": "273653477426.dkr.ecr.eu-central-1.amazonaws.com/odin-sitecore-xm-identity:9.3.0-nanoserver-1809-4f6f5703",
     "memory": 1024,
     "cpu": 500,
     "logConfiguration": {
