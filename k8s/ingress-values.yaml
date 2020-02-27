@@ -1,0 +1,15 @@
+controller:
+  nodeSelector:
+    kubernetes.io/os: linux
+  admissionWebhooks:
+    patch:
+      nodeSelector:
+        kubernetes.io/os: linux
+  service:
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+defaultBackend:
+  nodeSelector:
+    kubernetes.io/os: linux
+
