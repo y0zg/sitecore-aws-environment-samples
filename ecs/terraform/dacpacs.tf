@@ -8,7 +8,7 @@ data "aws_ssm_parameter" "sitecore_packages_bucket" {
 
 resource "aws_ecs_task_definition" "this" {
   family                = "dacpac"
-  execution_role_arn    = data.aws_ssm_parameter.packages_role_arn.value
+  task_role_arn         = data.aws_ssm_parameter.packages_role_arn.value
   container_definitions = <<EOF
 [
 	{
