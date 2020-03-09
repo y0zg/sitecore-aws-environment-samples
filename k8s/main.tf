@@ -100,12 +100,6 @@ module "eks" {
 
   vpc_id = module.vpc.vpc_id
 
-  # Managed Node Groups
-  node_groups_defaults = {
-    ami_type  = "AL2_x86_64"
-    disk_size = 50
-  }
-
   worker_groups = [
     {
       name = "linux-worker-group"
@@ -129,6 +123,18 @@ module "eks" {
   map_roles    = var.map_roles
   map_users    = var.map_users
   map_accounts = var.map_accounts
+}
+
+resource "null_resource" "windows_support" {
+  depends_on = [
+    module.eks,
+  ]
+
+  count = var.windows_workers_count > 0 ? 1 : 0
+
+  provisioner "local-exec" {
+    command = "sh enable-windows-support.sh -k ${module.eks.kubeconfig_filename}"
+  }
 }
 
 # Ingress: IAM
