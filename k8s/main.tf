@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "eu-central-1"
+  region  = "eu-central-1"
   profile = "nuuday_digital_dev"
 }
 
@@ -42,13 +42,16 @@ data "aws_region" "current" {}
 locals {
   cluster_name = "test-eks-${random_string.suffix.result}"
 
-  alb_ingress_service_account_name = "alb-ingress-controller"
+  alb_ingress_service_account_name      = "alb-ingress-controller"
   alb_ingress_service_account_namespace = "kube-system"
 
+  alb_ingress_controller_version = "v1.1.5"
+
   tags = {
-    team = "odin-platform"
-    billing = "odin-platform"
-    author = "asore@nuuday.dk"
+    team       = "odin-platform"
+    billing    = "odin-platform"
+    author     = "asore@nuuday.dk"
+    repository = "https://gitlab.yousee.dk/odin/infrastructure/sitecore-aws-infrastructure/-/tree/master/k8s"
   }
 }
 
@@ -89,7 +92,7 @@ module "vpc" {
 }
 
 module "eks" {
-  source  = "github.com/terraform-aws-modules/terraform-aws-eks?ref=v8.2.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-eks?ref=v9.0.0"
 
   cluster_name = local.cluster_name
   subnets      = module.vpc.private_subnets
@@ -100,22 +103,22 @@ module "eks" {
 
   vpc_id = module.vpc.vpc_id
 
-  worker_groups = [
+  worker_groups_launch_template = [
     {
-      name = "linux-worker-group"
-      instance_type = "t2.medium"
-      platform = "linux"
-      asg_max_size = var.linux_workers_count
-      asg_min_size = var.linux_workers_count
+      name                 = "linux-worker-group"
+      instance_type        = "t2.medium"
+      platform             = "linux"
+      asg_max_size         = var.linux_workers_count
+      asg_min_size         = var.linux_workers_count
       asg_desired_capacity = var.linux_workers_count
     },
 
     {
-      name = "windows-worker-group"
-      instance_type = "m5.large"
-      platform = "windows"
-      asg_max_size = var.windows_workers_count
-      asg_min_size = var.windows_workers_count
+      name                 = "windows-worker-group"
+      instance_type        = "m5.large"
+      platform             = "windows"
+      asg_max_size         = var.windows_workers_count
+      asg_min_size         = var.windows_workers_count
       asg_desired_capacity = var.windows_workers_count
     }
   ]
@@ -137,10 +140,11 @@ resource "null_resource" "windows_support" {
   }
 }
 
-# Ingress: IAM
+# AWS Application Load Balancer Ingress Controller
+# Source: https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
 
 data "http" "alb_ingress_policy" {
-  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/v1.1.4/docs/examples/iam-policy.json"
+  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/${local.alb_ingress_controller_version}/docs/examples/iam-policy.json"
 }
 
 resource "aws_iam_policy" "alb_ingress" {
@@ -151,7 +155,7 @@ resource "aws_iam_policy" "alb_ingress" {
 }
 
 resource "aws_iam_role" "alb_ingress" {
-  name = "eks-alb-ingress-controller"
+  name = "alb-ingress-controller"
   path = "/odin/"
 
   assume_role_policy = <<EOF
@@ -176,19 +180,55 @@ EOF
 #      }
 
 resource "aws_iam_role_policy_attachment" "alb_ingress" {
-  role = aws_iam_role.alb_ingress.name
+  role       = aws_iam_role.alb_ingress.name
   policy_arn = aws_iam_policy.alb_ingress.arn
 }
 
-resource "kubernetes_service_account" "alb_ingress" {
-  metadata {
-    name = local.alb_ingress_service_account_name
-    namespace = local.alb_ingress_service_account_namespace
+resource "null_resource" "alb_ingress_rbac" {
+  depends_on = [
+    module.eks,
+  ]
 
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.alb_ingress.arn
-    }
+  provisioner "local-exec" {
+    command = <<EOF
+KUBECONFIG=${module.eks.kubeconfig_filename} kubectl apply -f alb-ingress/rbac-role.yaml
+
+KUBECONFIG=${module.eks.kubeconfig_filename} kubectl annotate serviceaccount \
+  -n kube-system \
+  --overwrite=true \
+  alb-ingress-controller \
+  eks.amazonaws.com/role-arn=${aws_iam_role.alb_ingress.arn}
+EOF
   }
+}
+
+## ALB Ingress Controller: The deployment itself
+
+resource "null_resource" "alb_ingress_controller" {
+  depends_on = [
+    null_resource.alb_ingress_rbac,
+  ]
+
+  provisioner "local-exec" {
+    command = <<EOF
+cat <<MANIFEST | KUBECONFIG=${module.eks.kubeconfig_filename} kubectl apply -f -
+${templatefile("${path.module}/alb-ingress/alb-ingress-controller.yaml", {
+    cluster_name = module.eks.cluster_id
+    vpc_id       = module.vpc.vpc_id
+    region       = data.aws_region.current.name
+})}
+MANIFEST
+EOF
+}
+}
+
+## AWS ALB
+
+resource "aws_lb" "external" {
+  name               = module.eks.cluster_id
+  internal           = false
+  load_balancer_type = "application"
+  subnets            = module.vpc.public_subnets
 }
 
 # Output 
