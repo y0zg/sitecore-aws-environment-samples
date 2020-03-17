@@ -153,8 +153,8 @@ resource "aws_iam_policy" "alb_ingress" {
 }
 
 resource "aws_iam_role" "alb_ingress" {
-  name = "alb-ingress-controller"
-  path = "/odin/"
+  name_prefix = "alb-ingress-controller"
+  path        = "/odin/"
 
   assume_role_policy = <<EOF
 {
