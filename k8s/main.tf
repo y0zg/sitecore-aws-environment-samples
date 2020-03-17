@@ -96,12 +96,8 @@ module "eks" {
 
   cluster_name = local.cluster_name
   subnets      = module.vpc.private_subnets
-
-  tags = local.tags
-
-  enable_irsa = true
-
-  vpc_id = module.vpc.vpc_id
+  enable_irsa  = true
+  vpc_id       = module.vpc.vpc_id
 
   worker_groups_launch_template = [
     {
@@ -126,6 +122,8 @@ module "eks" {
   map_roles    = var.map_roles
   map_users    = var.map_users
   map_accounts = var.map_accounts
+
+  tags = local.tags
 }
 
 resource "null_resource" "windows_support" {
@@ -183,93 +181,3 @@ resource "aws_iam_role_policy_attachment" "alb_ingress" {
   role       = aws_iam_role.alb_ingress.name
   policy_arn = aws_iam_policy.alb_ingress.arn
 }
-
-resource "null_resource" "alb_ingress_rbac" {
-  depends_on = [
-    module.eks,
-  ]
-
-  provisioner "local-exec" {
-    command = <<EOF
-KUBECONFIG=${module.eks.kubeconfig_filename} kubectl apply -f alb-ingress/rbac-role.yaml
-
-KUBECONFIG=${module.eks.kubeconfig_filename} kubectl annotate serviceaccount \
-  -n kube-system \
-  --overwrite=true \
-  alb-ingress-controller \
-  eks.amazonaws.com/role-arn=${aws_iam_role.alb_ingress.arn}
-EOF
-  }
-}
-
-## ALB Ingress Controller: The deployment itself
-
-resource "null_resource" "alb_ingress_controller" {
-  depends_on = [
-    null_resource.alb_ingress_rbac,
-  ]
-
-  provisioner "local-exec" {
-    command = <<EOF
-cat <<MANIFEST | KUBECONFIG=${module.eks.kubeconfig_filename} kubectl apply -f -
-${templatefile("${path.module}/alb-ingress/alb-ingress-controller.yaml", {
-    cluster_name = module.eks.cluster_id
-    vpc_id       = module.vpc.vpc_id
-    region       = data.aws_region.current.name
-})}
-MANIFEST
-EOF
-}
-}
-
-## AWS ALB
-
-resource "aws_lb" "external" {
-  name               = module.eks.cluster_id
-  internal           = false
-  load_balancer_type = "application"
-  subnets            = module.vpc.public_subnets
-}
-
-# Output 
-output "kubeconfig_filename" {
-  value = module.eks.kubeconfig_filename
-}
-
-output "eks_cluster_name" {
-  value = module.eks.cluster_id
-}
-
-# DNS
-
-#locals {
-#  lb_fqdn = "aadb05ce8525811ea9c390690c91317e-642166da4599e702.elb.eu-central-1.amazonaws.com"
-#}
-#
-#data "aws_route53_zone" "this" {
-#  name = "aws.nuuday.nu"
-#}
-#
-#resource "aws_route53_record" "cd" {
-#  zone_id = data.aws_route53_zone.this.id
-#  name = "asore-cd.aws.nuuday.nu"
-#  type = "CNAME"
-#  records = [local.lb_fqdn]
-#  ttl = 300
-#}
-#
-#resource "aws_route53_record" "cm" {
-#  zone_id = data.aws_route53_zone.this.id
-#  name = "asore-cm.aws.nuuday.nu"
-#  type = "CNAME"
-#  records = [local.lb_fqdn]
-#  ttl = 300
-#}
-#
-#resource "aws_route53_record" "sis" {
-#  zone_id = data.aws_route53_zone.this.id
-#  name = "asore-sis.aws.nuuday.nu"
-#  type = "CNAME"
-#  records = [local.lb_fqdn]
-#  ttl = 300
-#}

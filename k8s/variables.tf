@@ -31,11 +31,11 @@ variable "map_users" {
 }
 
 variable "linux_workers_count" {
-  type = number
+  type    = number
   default = 2
 }
 
 variable "windows_workers_count" {
-  type = number
+  type    = number
   default = 1
 }
