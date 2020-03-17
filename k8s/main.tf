@@ -146,8 +146,8 @@ data "http" "alb_ingress_policy" {
 }
 
 resource "aws_iam_policy" "alb_ingress" {
-  name = "ALBIngressControllerIAMPolicy-asore"
-  path = "/odin/"
+  name_prefix = "ALBIngressControllerIAMPolicy"
+  path        = "/odin/"
 
   policy = data.http.alb_ingress_policy.body
 }
