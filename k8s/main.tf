@@ -32,7 +32,7 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.cluster.token
   load_config_file       = false
-  version                = "1.10"
+  version                = "~>1.11"
 }
 
 data "aws_availability_zones" "available" {}
@@ -61,8 +61,7 @@ resource "random_string" "suffix" {
 }
 
 module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 2.6"
+  source  = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.32.0"
 
   name                 = "test-vpc"
   cidr                 = "172.16.0.0/16"
@@ -92,7 +91,7 @@ module "vpc" {
 }
 
 module "eks" {
-  source = "github.com/terraform-aws-modules/terraform-aws-eks?ref=v9.0.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-eks?ref=v10.0.0"
 
   cluster_name = local.cluster_name
   subnets      = module.vpc.private_subnets
