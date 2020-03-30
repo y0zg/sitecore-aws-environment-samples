@@ -82,10 +82,10 @@ module "eks" {
   enable_irsa  = true
   vpc_id       = module.vpc.vpc_id
 
-  worker_groups_launch_template = [
+  worker_groups = [
     {
       name                 = "linux-worker-group"
-      instance_type        = "t2.medium"
+      instance_type        = "t3.nano"
       platform             = "linux"
       asg_max_size         = var.linux_workers_count
       asg_min_size         = var.linux_workers_count
