@@ -45,7 +45,7 @@ resource "random_string" "suffix" {
 }
 
 module "vpc" {
-  source  = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.32.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.32.0"
 
   name                 = "test-vpc"
   cidr                 = "172.16.0.0/16"
@@ -82,16 +82,17 @@ module "eks" {
   enable_irsa  = true
   vpc_id       = module.vpc.vpc_id
 
-  worker_groups = [
+  node_groups = [
     {
-      name                 = "linux-worker-group"
-      instance_type        = "t3.nano"
-      platform             = "linux"
-      asg_max_size         = var.linux_workers_count
-      asg_min_size         = var.linux_workers_count
-      asg_desired_capacity = var.linux_workers_count
+      name             = "primary"
+      instance_type    = "t3.nano"
+      max_size         = var.linux_workers_count
+      min_size         = var.linux_workers_count
+      desired_capacity = var.linux_workers_count
     },
+  ]
 
+  worker_groups = [
     {
       name                 = "windows-worker-group"
       instance_type        = "m5.large"
