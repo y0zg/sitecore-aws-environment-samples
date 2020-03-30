@@ -3,22 +3,6 @@ provider "aws" {
   profile = "nuuday_digital_dev"
 }
 
-provider "random" {
-  version = "~> 2.1"
-}
-
-provider "local" {
-  version = "~> 1.2"
-}
-
-provider "null" {
-  version = "~> 2.1"
-}
-
-provider "template" {
-  version = "~> 2.1"
-}
-
 data "aws_eks_cluster" "cluster" {
   name = module.eks.cluster_id
 }
