@@ -33,5 +33,10 @@ resource "helm_release" "nginx_ingress" {
     name  = "controller.service.nodePorts.https"
     value = local.ingress_controller_node_ports.https
   }
+
+  set {
+    name  = "controller.extraArgs.publish-status-address"
+    value = aws_lb.external.dns_name
+  }
 }
 
