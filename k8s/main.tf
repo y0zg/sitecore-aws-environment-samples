@@ -26,10 +26,6 @@ data "aws_region" "current" {}
 locals {
   cluster_name = "test-eks-${random_string.suffix.result}"
 
-  alb_ingress_service_account_name      = "alb-ingress-controller"
-  alb_ingress_service_account_namespace = "kube-system"
-
-  alb_ingress_controller_version = "v1.1.5"
 
   tags = {
     team       = "odin-platform"
@@ -122,46 +118,3 @@ resource "null_resource" "windows_support" {
   }
 }
 
-# AWS Application Load Balancer Ingress Controller
-# Source: https://docs.aws.amazon.com/eks/latest/userguide/alb-ingress.html
-
-data "http" "alb_ingress_policy" {
-  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-alb-ingress-controller/${local.alb_ingress_controller_version}/docs/examples/iam-policy.json"
-}
-
-resource "aws_iam_policy" "alb_ingress" {
-  name_prefix = "ALBIngressControllerIAMPolicy"
-  path        = "/odin/"
-
-  policy = data.http.alb_ingress_policy.body
-}
-
-resource "aws_iam_role" "alb_ingress" {
-  name_prefix = "alb-ingress-controller"
-  path        = "/odin/"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "${module.eks.oidc_provider_arn}"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity"
-    }
-  ]
-}
-EOF
-}
-#      "Condition": {
-#        "StringEquals": {
-#          "${trimprefix(module.eks.cluster_oidc_issuer_url, "https://")}:sub": "system:serviceaccount:${local.alb_ingress_service_account_namespace}:${local.alb_ingress_service_account_name}"
-#        }
-#      }
-
-resource "aws_iam_role_policy_attachment" "alb_ingress" {
-  role       = aws_iam_role.alb_ingress.name
-  policy_arn = aws_iam_policy.alb_ingress.arn
-}
