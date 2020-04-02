@@ -19,6 +19,15 @@ provider "kubernetes" {
   version                = "~>1.11"
 }
 
+provider "helm" {
+  kubernetes {
+    host                   = data.aws_eks_cluster.cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+    token                  = data.aws_eks_cluster_auth.cluster.token
+    load_config_file       = false
+  }
+}
+
 data "aws_availability_zones" "available" {}
 
 data "aws_region" "current" {}
@@ -29,6 +38,11 @@ locals {
   ingress_tags = {
     "kubernetes.io/service-name" = "default/nginx-ingress-controller"
     "kubernetes.io/cluster/${local.cluster_name}" = "owned"
+  }
+
+  ingress_controller_node_ports = {
+    http  = 32080
+    https = 32443
   }
 
   tags = {
@@ -88,7 +102,7 @@ resource "aws_lb" "external" {
 
 resource "aws_lb_target_group" "http" {
   name_prefix = "http"
-  port        = 32080
+  port        = local.ingress_controller_node_ports.http
   protocol    = "TCP"
   target_type = "instance"
   vpc_id      = module.vpc.vpc_id
@@ -101,7 +115,7 @@ resource "aws_lb_target_group" "http" {
 
 resource "aws_lb_target_group" "https" {
   name_prefix = "https"
-  port        = 32443
+  port        = local.ingress_controller_node_ports.https
   protocol    = "TCP"
   target_type = "instance"
   vpc_id      = module.vpc.vpc_id
@@ -141,8 +155,8 @@ resource "aws_security_group" "worker_http_ingress" {
 
   ingress {
     description = "HTTP from NLB"
-    from_port   = 32080
-    to_port     = 32080
+    from_port   = local.ingress_controller_node_ports.http
+    to_port     = local.ingress_controller_node_ports.http
     protocol    = "tcp"
     cidr_blocks = [
       "0.0.0.0/0",
@@ -157,8 +171,8 @@ resource "aws_security_group" "worker_https_ingress" {
 
   ingress {
     description = "HTTP from NLB"
-    from_port   = 32443
-    to_port     = 32443
+    from_port   = local.ingress_controller_node_ports.https
+    to_port     = local.ingress_controller_node_ports.https
     protocol    = "tcp"
     cidr_blocks = [
       "0.0.0.0/0",
