@@ -11,12 +11,26 @@ If you want Windows workers added to the cluster, setting `windows_workers_count
 terraform apply
 ```
 
+## Prerequisites
+
+These must be installed and available in your `$PATH`
+
+- Helm 3+
+- Terraform 0.12
+- kubectl
+
 ## Ingress
 
 The following command installs [nginx-ingress-controller](https://kubernetes.github.io/ingress-nginx/) into the newly created cluster:
 
 ```bash
+# Updates your kubeconfig with fresh tokens for accessing your new cluster
 aws eks update-kubeconfig --name [name of newly created cluster]
+
+# Ensure the 'stable' repository is added to your helm
+helm repo add stable https://kubernetes-charts.storage.googleapis.com
+
+# Install the nginx-ingress controller
 helm install nginx-ingress -values ingress-values.yaml stable/nginx-ingress
 ```
 
