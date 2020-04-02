@@ -13,16 +13,24 @@ It also provisions a [Network Load Balancer](https://docs.aws.amazon.com/elastic
 Each listener forwards traffic to two distinct target groups.
 All worker nodes are automatically registered as targets inside the both target groups.
 
-Lastly, it also deploys the `nginx-ingress-controller` using the Helm chart [stable/nginx-ingress](https://github.com/helm/charts/tree/master/stable/nginx-ingress).
+For ingress, it deploys the `nginx-ingress-controller` using the Helm chart [stable/nginx-ingress](https://github.com/helm/charts/tree/master/stable/nginx-ingress).
 See the [Ingress](#ingress) section for more details.
 
+DNS records in Route53 are managed using [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) using the Helm chart [stable/external-dns](https://github.com/helm/charts/tree/master/stable/external-dns).
+See the [DNS](#dns) section for more details.
+
 **Note** If you want Windows workers added to the cluster, setting `windows_workers_count = 1` will add `1` Windows worker node.
+
+## Getting Started
 
 Spin it all up using the following command:
 
 ```bash
 terraform apply
 ```
+
+Once completed, go through the output and see if there's anything of interest.
+There should be a URL :link: pointing towards a sample app, complete with automatic creation of DNS record :book: and HTTPS certificate :lock:
 
 ## Prerequisites
 
@@ -59,3 +67,13 @@ If everything is working as intended, you'll see the following response:
 ```
 default backend - 404
 ```
+
+## DNS
+
+**Note** To avoid mistakes, this Terraform module creates a new DNS zone in Route53 in which ExternalDNS operates.
+
+ExternalDNS is granted access to modify this DNS zone using [IAM Roles for Service Accounts]().
+The IAM role, policy, and ExternalDNS itself is defined in [external-dns.tf](external-dns.tf).
+
+
+

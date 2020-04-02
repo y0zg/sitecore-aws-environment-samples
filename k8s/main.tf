@@ -33,7 +33,10 @@ data "aws_availability_zones" "available" {}
 data "aws_region" "current" {}
 
 locals {
-  cluster_name = "test-eks-${random_string.suffix.result}"
+  cluster_name = "test-eks-${lower(random_string.suffix.result)}"
+
+  parent_dns_zone = "aws.nuuday.nu"
+  dns_subdomain   = local.cluster_name
 
   ingress_tags = {
     "kubernetes.io/service-name" = "default/nginx-ingress-controller"
@@ -235,3 +238,22 @@ resource "null_resource" "windows_support" {
   }
 }
 
+data "aws_route53_zone" "aws_nuuday" {
+  name = local.parent_dns_zone
+}
+
+resource "aws_route53_zone" "this" {
+  name          = "${local.dns_subdomain}.${local.parent_dns_zone}"
+  force_destroy = true
+
+  tags = local.tags
+}
+
+resource "aws_route53_record" "ns" {
+  zone_id = data.aws_route53_zone.aws_nuuday.zone_id
+  name    = "${local.dns_subdomain}.${local.parent_dns_zone}"
+  type    = "NS"
+  ttl     = "30"
+
+  records = aws_route53_zone.this.name_servers
+}
