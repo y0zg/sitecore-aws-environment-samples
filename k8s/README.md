@@ -31,7 +31,7 @@ aws eks update-kubeconfig --name [name of newly created cluster]
 helm repo add stable https://kubernetes-charts.storage.googleapis.com
 
 # Install the nginx-ingress controller
-helm install nginx-ingress -values ingress-values.yaml stable/nginx-ingress
+helm install nginx-ingress --values ingress-values.yaml stable/nginx-ingress
 ```
 
 When completed, this chart also ensures one [Network Load Balancer (NLB)]( https://docs.aws.amazon.com/elasticloadbalancing/latest/network/introduction.html) is deployed.
