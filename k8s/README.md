@@ -3,8 +3,9 @@
 This Terraform module provisions an EKS cluster with
 
 - 2x Linux worker nodes
-- 1x Windows worker node
 - [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) enabled
+
+If you want Windows workers added to the cluster, setting `windows_workers_count = 1` will add `1` Windows worker node.
 
 ```bash
 terraform apply
