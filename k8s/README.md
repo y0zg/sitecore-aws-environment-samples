@@ -19,14 +19,20 @@ See the [Ingress](#ingress) section for more details.
 DNS records in Route53 are managed using [ExternalDNS](https://github.com/kubernetes-sigs/external-dns) using the Helm chart [stable/external-dns](https://github.com/helm/charts/tree/master/stable/external-dns).
 See the [DNS](#dns) section for more details.
 
-**Note** If you want Windows workers added to the cluster, setting `windows_workers_count = 1` will add `1` Windows worker node.
-
 ## Getting Started
 
 Spin it all up using the following command:
 
 ```bash
 terraform apply
+```
+
+**Note** If you want Windows workers added to the cluster, try the below command instead.
+It will also spin up an IIS container and expose it to the Internet.
+It's URL will be available in the `iis_sample_url` output from Terraform.
+
+```bash
+terraform apply -var windows_workers_count=1
 ```
 
 Once completed, go through the output and see if there's anything of interest.
