@@ -109,3 +109,29 @@ resource "helm_release" "cert_manager" {
     null_resource.cert_manager_crds,
   ]
 }
+
+resource "local_file" "cert_manager_issuers" {
+  filename        = "${path.module}/.generated_manifests/issuers.yaml"
+  file_permission = "0444"
+
+  content = templatefile("${path.module}/manifests/cert-manager-issuers.yaml.tmpl", {
+    author_email = local.tags.author
+    dns_zone     = "${local.dns_subdomain}.${local.parent_dns_zone}"
+    dns_zone_id  = aws_route53_zone.this.zone_id
+    region       = data.aws_region.current.name
+  })
+}
+
+resource "null_resource" "cert_manager_issuers" {
+  depends_on = [
+    local_file.cert_manager_issuers,
+  ]
+
+  provisioner "local-exec" {
+    command = "kubectl apply -f ${local_file.cert_manager_issuers.filename}"
+
+    environment = {
+      KUBECONFIG = "${path.module}/${module.eks.kubeconfig_filename}"
+    }
+  }
+}
