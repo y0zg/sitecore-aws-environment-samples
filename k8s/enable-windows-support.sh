@@ -1,10 +1,13 @@
 #!/bin/env bash
 
 usage() {
-    echo "Usage: $0 [-r AWS_REGION] -k KUBE_CONFIG" 1>&2; exit 1;
+    echo "Usage: $0 [-r AWS_REGION] [-k KUBE_CONFIG]" 1>&2; exit 1;
 }
 
+# Attempt to read defaults from env vars
 AWS_REGION=$AWS_DEFAULT_REGION
+KUBE_CONFIG=$KUBECONFIG
+
 CLEAN=''
 TMP_PATH=$(mktemp -d)
 

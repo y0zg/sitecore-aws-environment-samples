@@ -227,14 +227,18 @@ module "eks" {
 }
 
 resource "null_resource" "windows_support" {
+  count = var.windows_workers_count > 0 ? 1 : 0
+
   depends_on = [
     module.eks,
   ]
 
-  count = var.windows_workers_count > 0 ? 1 : 0
-
   provisioner "local-exec" {
-    command = "sh enable-windows-support.sh -k ${module.eks.kubeconfig_filename}"
+    command = "sh enable-windows-support.sh"
+    environment = {
+      KUBECONFIG = "${path.module}/${module.eks.kubeconfig_filename}"
+      AWS_DEFAULT_REGION = data.aws_region.current.name
+    }
   }
 }
 
