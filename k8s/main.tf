@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "odin-infra-dev"
+    key    = "infrastructure/asore/reference-eks.tfstate"
+    region = "eu-central-1"
+  }
+}
+
 provider "aws" {
   region  = "eu-north-1"
   profile = "nuuday_digital_dev"
