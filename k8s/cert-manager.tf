@@ -63,8 +63,7 @@ resource "null_resource" "cert_manager_crds" {
     command = join(" ", [
       "kubectl apply",
       "--validate=false",
-      "--token='${data.aws_eks_cluster_auth.cluster.token}'",
-      "--server=${data.aws_eks_cluster.cluster.endpoint}",
+      "--kubeconfig=${module.eks.kubeconfig_filename}",
       "-f https://github.com/jetstack/cert-manager/releases/download/v${local.cert_manager_version}/cert-manager.crds.yaml",
     ])
   }
@@ -101,4 +100,8 @@ resource "helm_release" "cert_manager" {
     name  = "nodeSelector.kubernetes\\.io/os"
     value = "linux"
   }
+
+  depends_on = [
+    null_resource.cert_manager_crds,
+  ]
 }

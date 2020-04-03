@@ -39,6 +39,7 @@ These must be installed and available in your `$PATH`
 - Helm 3+
 - Terraform 0.12
 - kubectl
+- aws-iam-authenticator
 
 ## Ingress
 
