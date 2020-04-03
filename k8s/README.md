@@ -29,14 +29,24 @@ terraform apply
 
 **Note** If you want Windows workers added to the cluster, try the below command instead.
 It will also spin up an IIS container and expose it to the Internet.
-It's URL will be available in the `iis_sample_url` output from Terraform.
 
 ```bash
 terraform apply -var windows_workers_count=1
 ```
 
-Once completed, go through the output and see if there's anything of interest.
-There should be a URL :link: pointing towards a sample app, complete with automatic creation of DNS record :book: and HTTPS certificate :lock:
+Once completed, Terraform will return URLs for the sample app(s) deployed into the EKS cluster.
+They are described below.
+
+|Output key        |Description                                                                                  |
+|------------------|---------------------------------------------------------------------------------------------|
+|`iis_sample_url`  |URL for the sample IIS app. **Note** Requires Terraform variable `windows_workers_count > 0`.|
+|`nginx_sample_url`|URL for the sample nginx app.                                                                |
+
+**Note** It may take several minutes for the URLs to be accessible.
+This is due to DNS changes needing to propagate.
+
+**Note** The HTTPS certificates are issued through the [Let's Encrypt *staging* issuer](https://letsencrypt.org/docs/staging-environment/).
+This is done to avoid hitting Let's Encrypt quotas.
 
 ## Prerequisites
 

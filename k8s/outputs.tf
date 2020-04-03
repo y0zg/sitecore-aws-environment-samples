@@ -1,3 +1,4 @@
-output "lb_fqdn" {
-  value = aws_lb.external.dns_name
+output "dns_zone" {
+  description = "Unique DNS zone used in this deployment"
+  value       = aws_route53_zone.this.name
 }
