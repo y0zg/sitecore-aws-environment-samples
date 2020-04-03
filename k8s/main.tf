@@ -62,7 +62,7 @@ resource "random_string" "suffix" {
 }
 
 module "vpc" {
-  source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.32.0"
+  source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.33.0"
 
   name                 = "test-vpc"
   cidr                 = "172.16.0.0/16"
