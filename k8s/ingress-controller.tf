@@ -34,6 +34,13 @@ resource "helm_release" "nginx_ingress" {
     value = local.ingress_controller_node_ports.https
   }
 
+  # Preserve the source IP for incoming requests
+  # https://kubernetes.io/docs/tutorials/services/source-ip/#source-ip-for-services-with-typenodeport
+  set {
+    name  = "controller.service.externalTrafficPolicy"
+    value = "Local"
+  }
+
   set {
     name  = "controller.extraArgs.publish-status-address"
     value = module.lb.this_lb_dns_name
