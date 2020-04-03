@@ -3,6 +3,8 @@ locals {
 }
 
 resource "kubernetes_namespace" "iis" {
+  count = var.windows_workers_count > 0 ? 1 : 0
+
   metadata {
     name = "iis-sample"
   }
@@ -13,7 +15,7 @@ resource "kubernetes_deployment" "iis" {
 
   metadata {
     name      = "windows-iis"
-    namespace = kubernetes_namespace.iis.metadata.0.name
+    namespace = kubernetes_namespace.iis.0.metadata.0.name
   }
 
   spec {
@@ -56,7 +58,7 @@ resource "kubernetes_service" "iis" {
 
   metadata {
     name      = "windows-iis"
-    namespace = kubernetes_namespace.iis.metadata.0.name
+    namespace = kubernetes_namespace.iis.0.metadata.0.name
   }
 
   spec {
@@ -76,7 +78,7 @@ resource "kubernetes_ingress" "iis" {
 
   metadata {
     name      = "windows-iis"
-    namespace = kubernetes_namespace.iis.metadata.0.name
+    namespace = kubernetes_namespace.iis.0.metadata.0.name
 
     annotations = {
       # Ensures this Ingress object is picked up by our Nginx Ingress Controller
@@ -121,5 +123,6 @@ resource "kubernetes_ingress" "iis" {
 }
 
 output "iis_sample_url" {
-  value = "https://${local.iis_sample_hostname}"
+  description = "URL for the Windows IIS sample app. It will take a few minutes to be available due to DNS propagation."
+  value       = "https://${local.iis_sample_hostname}"
 }
