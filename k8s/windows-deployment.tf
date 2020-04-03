@@ -51,6 +51,15 @@ resource "kubernetes_deployment" "iis" {
       }
     }
   }
+
+  depends_on = [
+    # If the Pod is submitted *before* the Windows admissions webhooks,
+    # the pods will not be decorated appropriately, and will not be able to
+    # be scheduled onto the Windows workers.
+    #
+    # This minimizes the risk of that happening.
+    null_resource.windows_support,
+  ]
 }
 
 resource "kubernetes_service" "iis" {

@@ -39,7 +39,7 @@ locals {
   dns_subdomain   = local.cluster_name
 
   ingress_tags = {
-    "kubernetes.io/service-name" = "default/nginx-ingress-controller"
+    "kubernetes.io/service-name"                  = "default/nginx-ingress-controller"
     "kubernetes.io/cluster/${local.cluster_name}" = "owned"
   }
 
@@ -64,7 +64,7 @@ resource "random_string" "suffix" {
 module "vpc" {
   source = "github.com/terraform-aws-modules/terraform-aws-vpc?ref=v2.33.0"
 
-  name                 = "test-vpc"
+  name                 = local.cluster_name
   cidr                 = "172.16.0.0/16"
   azs                  = data.aws_availability_zones.available.names
   private_subnets      = ["172.16.1.0/24", "172.16.2.0/24", "172.16.3.0/24"]
@@ -91,64 +91,46 @@ module "vpc" {
   }
 }
 
-resource "aws_lb" "external" {
+module "lb" {
+  source = "github.com/terraform-aws-modules/terraform-aws-alb?ref=v5.2.0"
+
   name               = "${local.cluster_name}-ext"
-  internal           = false
   load_balancer_type = "network"
+  vpc_id             = module.vpc.vpc_id
   subnets            = module.vpc.public_subnets
 
+  http_tcp_listeners = [
+    {
+      port               = 80
+      protocol           = "TCP"
+      target_group_index = 0
+    },
+    {
+      port               = 443
+      protocol           = "TCP"
+      target_group_index = 1
+    },
+  ]
+
+  target_groups = [
+    {
+      name_prefix      = "http"
+      backend_protocol = "TCP"
+      backend_port     = local.ingress_controller_node_ports.http
+      target_type      = "instance"
+    },
+    {
+      name_prefix      = "https"
+      backend_protocol = "TCP"
+      backend_port     = local.ingress_controller_node_ports.https
+      target_type      = "instance"
+    },
+  ]
+
   tags = merge(
     local.tags,
     local.ingress_tags,
   )
-}
-
-resource "aws_lb_target_group" "http" {
-  name_prefix = "http"
-  port        = local.ingress_controller_node_ports.http
-  protocol    = "TCP"
-  target_type = "instance"
-  vpc_id      = module.vpc.vpc_id
-
-  tags = merge(
-    local.tags,
-    local.ingress_tags,
-  )
-}
-
-resource "aws_lb_target_group" "https" {
-  name_prefix = "https"
-  port        = local.ingress_controller_node_ports.https
-  protocol    = "TCP"
-  target_type = "instance"
-  vpc_id      = module.vpc.vpc_id
-
-  tags = merge(
-    local.tags,
-    local.ingress_tags,
-  )
-}
-
-resource "aws_lb_listener" "external_http" {
-  load_balancer_arn = aws_lb.external.arn
-  port              = 80
-  protocol          = "TCP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.http.arn
-  }
-}
-
-resource "aws_lb_listener" "external_https" {
-  load_balancer_arn = aws_lb.external.arn
-  port              = 443
-  protocol          = "TCP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.https.arn
-  }
 }
 
 resource "aws_security_group" "worker_http_ingress" {
@@ -173,7 +155,7 @@ resource "aws_security_group" "worker_https_ingress" {
   vpc_id      = module.vpc.vpc_id
 
   ingress {
-    description = "HTTP from NLB"
+    description = "HTTPS from NLB"
     from_port   = local.ingress_controller_node_ports.https
     to_port     = local.ingress_controller_node_ports.https
     protocol    = "tcp"
@@ -193,15 +175,12 @@ module "eks" {
 
   worker_groups = [
     {
-      instance_type    = "t3.large"
-      platform         = "linux"
+      instance_type        = "t3.large"
+      platform             = "linux"
       asg_max_size         = var.linux_workers_count
       asg_min_size         = var.linux_workers_count
       asg_desired_capacity = var.linux_workers_count
-      target_group_arns    = [
-        aws_lb_target_group.http.id,
-        aws_lb_target_group.https.id,
-      ]
+      target_group_arns    = module.lb.target_group_arns
 
       additional_security_group_ids = [
         aws_security_group.worker_http_ingress.id,
@@ -236,7 +215,7 @@ resource "null_resource" "windows_support" {
   provisioner "local-exec" {
     command = "sh enable-windows-support.sh"
     environment = {
-      KUBECONFIG = "${path.module}/${module.eks.kubeconfig_filename}"
+      KUBECONFIG         = "${path.module}/${module.eks.kubeconfig_filename}"
       AWS_DEFAULT_REGION = data.aws_region.current.name
     }
   }

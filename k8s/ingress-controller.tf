@@ -36,11 +36,12 @@ resource "helm_release" "nginx_ingress" {
 
   set {
     name  = "controller.extraArgs.publish-status-address"
-    value = aws_lb.external.dns_name
+    value = module.lb.this_lb_dns_name
   }
 
   depends_on = [
     module.eks,
+    module.lb,
   ]
 }
 
