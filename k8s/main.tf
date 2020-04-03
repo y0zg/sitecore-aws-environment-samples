@@ -38,11 +38,7 @@ locals {
   parent_dns_zone = "aws.nuuday.nu"
   dns_subdomain   = local.cluster_name
 
-  ingress_tags = {
-    "kubernetes.io/service-name"                  = "default/nginx-ingress-controller"
-    "kubernetes.io/cluster/${local.cluster_name}" = "owned"
-  }
-
+  # nginx servers will listen on these ports on the worker nodes
   ingress_controller_node_ports = {
     http  = 32080
     https = 32443
@@ -127,10 +123,7 @@ module "lb" {
     },
   ]
 
-  tags = merge(
-    local.tags,
-    local.ingress_tags,
-  )
+  tags = local.tags
 }
 
 resource "aws_security_group" "worker_http_ingress" {
