@@ -67,6 +67,10 @@ resource "null_resource" "cert_manager_crds" {
       "-f https://github.com/jetstack/cert-manager/releases/download/v${local.cert_manager_version}/cert-manager.crds.yaml",
     ])
   }
+
+  depends_on = [
+    module.eks,
+  ]
 }
 
 resource "kubernetes_namespace" "cert_manager" {

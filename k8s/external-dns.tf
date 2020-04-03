@@ -99,5 +99,9 @@ resource "helm_release" "external_dns" {
     name  = "nodeSelector.kubernetes\\.io/os"
     value = "linux"
   }
+
+  depends_on = [
+    module.eks,
+  ]
 }
 

@@ -38,5 +38,9 @@ resource "helm_release" "nginx_ingress" {
     name  = "controller.extraArgs.publish-status-address"
     value = aws_lb.external.dns_name
   }
+
+  depends_on = [
+    module.eks,
+  ]
 }
 
