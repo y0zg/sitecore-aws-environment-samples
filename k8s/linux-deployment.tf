@@ -86,6 +86,8 @@ resource "kubernetes_ingress" "nginx" {
       #
       # Note: Using the staging issuer to avoid hitting any limits on
       # Let's Encrypt's production issuer.
+      #
+      # Change 'letsencrypt-staging' to 'letsencrypt-prod' to issue trusted certs.
       "cert-manager.io/cluster-issuer" = "letsencrypt-staging"
     }
   }
