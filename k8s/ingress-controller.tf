@@ -15,10 +15,6 @@ resource "helm_release" "nginx_ingress" {
   chart      = "nginx-ingress"
   namespace  = kubernetes_namespace.nginx_ingress.metadata.0.name
 
-  values = [
-    file("ingress-values.yaml"),
-  ]
-
   set {
     name  = "controller.service.type"
     value = "NodePort"
@@ -44,6 +40,17 @@ resource "helm_release" "nginx_ingress" {
   set {
     name  = "controller.extraArgs.publish-status-address"
     value = module.lb.this_lb_dns_name
+  }
+
+  # Ensure pods are scheduled on Linux nodes only
+  set_string {
+    name  = "controller.nodeSelector.kubernetes\\.io/os"
+    value = "linux"
+  }
+
+  set_string {
+    name  = "defaultBackend.nodeSelector.kubernetes\\.io/os"
+    value = "linux"
   }
 
   depends_on = [
