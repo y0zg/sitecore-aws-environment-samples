@@ -112,7 +112,7 @@ resource "helm_release" "cert_manager" {
 
 resource "local_file" "cert_manager_issuers" {
   filename        = "${path.module}/.generated_manifests/issuers.yaml"
-  file_permission = "0444"
+  file_permission = "0655"
 
   content = templatefile("${path.module}/manifests/cert-manager-issuers.yaml.tmpl", {
     author_email = local.tags.author
