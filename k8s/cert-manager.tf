@@ -124,7 +124,7 @@ resource "local_file" "cert_manager_issuers" {
 
 resource "null_resource" "cert_manager_issuers" {
   depends_on = [
-    local_file.cert_manager_issuers,
+    null_resource.cert_manager_crds,
   ]
 
   provisioner "local-exec" {
