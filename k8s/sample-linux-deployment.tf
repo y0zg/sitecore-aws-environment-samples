@@ -1,5 +1,6 @@
 locals {
   nginx_sample_hostname = "nginx.${local.dns_subdomain}.${local.parent_dns_zone}"
+  nginx_cluster_issuer  = var.samples_use_production_lets_encrypt ? "letsencrypt-prod" : "letsencrypt-staging"
 }
 
 resource "kubernetes_namespace" "nginx" {
@@ -88,7 +89,7 @@ resource "kubernetes_ingress" "nginx" {
       # Let's Encrypt's production issuer.
       #
       # Change 'letsencrypt-staging' to 'letsencrypt-prod' to issue trusted certs.
-      "cert-manager.io/cluster-issuer" = "letsencrypt-staging"
+      "cert-manager.io/cluster-issuer" = local.nginx_cluster_issuer
     }
   }
 

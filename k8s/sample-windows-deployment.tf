@@ -1,5 +1,6 @@
 locals {
   iis_sample_hostname = "iis.${local.dns_subdomain}.${local.parent_dns_zone}"
+  iis_cluster_issuer  = var.samples_use_production_lets_encrypt ? "letsencrypt-prod" : "letsencrypt-staging"
 }
 
 resource "kubernetes_namespace" "iis" {
@@ -97,7 +98,7 @@ resource "kubernetes_ingress" "iis" {
       #
       # Note: Using the staging issuer to avoid hitting any limits on
       # Let's Encrypt's production issuer.
-      "cert-manager.io/cluster-issuer" = "letsencrypt-staging"
+      "cert-manager.io/cluster-issuer" = local.iis_cluster_issuer
     }
   }
 
