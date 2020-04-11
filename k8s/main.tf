@@ -42,6 +42,7 @@ data "aws_region" "current" {}
 
 locals {
   cluster_name = "test-eks-${lower(random_string.suffix.result)}"
+  oidc_issuer  = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
 
   parent_dns_zone = "aws.nuuday.nu"
   dns_subdomain   = local.cluster_name

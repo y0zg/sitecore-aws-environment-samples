@@ -2,6 +2,8 @@ locals {
   # Latest as of time of writing.
   # Found on: https://cert-manager.io/docs/installation/kubernetes/
   cert_manager_version = "0.14.1"
+
+  cert_manager_service_account_name = "cert-manager"
 }
 
 resource "aws_iam_role" "cert_manager" {
@@ -17,7 +19,12 @@ resource "aws_iam_role" "cert_manager" {
       "Principal": {
         "Federated": "${module.eks.oidc_provider_arn}"
       },
-      "Action": "sts:AssumeRoleWithWebIdentity"
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${local.oidc_issuer}:sub": "system:serviceaccount:${kubernetes_namespace.cert_manager.metadata.0.name}:${local.cert_manager_service_account_name}"
+        }
+      }
     }
   ]
 }
@@ -93,6 +100,11 @@ resource "helm_release" "cert_manager" {
   set {
     name  = "global.rbac.create"
     value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = local.cert_manager_service_account_name
   }
 
   set_string {

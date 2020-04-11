@@ -17,7 +17,12 @@ resource "aws_iam_role" "external_dns" {
       "Principal": {
         "Federated": "${module.eks.oidc_provider_arn}"
       },
-      "Action": "sts:AssumeRoleWithWebIdentity"
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "${local.oidc_issuer}:sub": "system:serviceaccount:${kubernetes_namespace.external_dns.metadata.0.name}:external-dns"
+        }
+      }
     }
   ]
 }
