@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 usage() {
-    echo "Usage: $0 [-r AWS_REGION] [-k KUBE_CONFIG]" 1>&2; exit 1;
+    echo "Usage: $0 [-r AWS_REGION] [-k KUBE_CONFIG] [-w]" 1>&2; exit 1;
 }
 
 # Attempt to read defaults from env vars
@@ -9,14 +9,19 @@ AWS_REGION=$AWS_DEFAULT_REGION
 KUBE_CONFIG=$KUBECONFIG
 
 CLEAN=''
+WAIT=''
 TMP_PATH=$(mktemp -d)
+VPC_DEPLOYMENT_NAME='deployment/vpc-admission-webhook-deployment'
+VPC_NAMESPACE='kube-system'
 
-while getopts ':r:k:' o; do
+while getopts ':r:k:w:' o; do
     case "${o}" in
         r)
             REGION=${OPTARG} ;;
         k)
             KUBE_CONFIG=${OPTARG} ;;
+        w)
+            WAIT='true'
     esac
 done
 
@@ -54,4 +59,9 @@ KUBECONFIG=$KUBE_CONFIG kubectl apply -f $TMP_PATH/vpc-admission-webhook.yaml
 
 echo "Removing $TMP_PATH" 1>&2
 rm -rf $TMP_PATH
+
+if [ -z "${WAIT}" ]; then
+    echo "Waiting for $VPC_DEPLOYMENT_NAME to complete..." 1>&2
+    KUBECONFIG=$KUBE_CONFIG kubectl wait --for=condition=Available -n $VPC_NAMESPACE $VPC_DEPLOYMENT_NAME
+fi
 
