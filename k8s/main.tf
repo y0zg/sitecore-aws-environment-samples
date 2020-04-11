@@ -44,6 +44,8 @@ locals {
   cluster_name = "test-eks-${lower(random_string.suffix.result)}"
   oidc_issuer  = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
 
+  aws_vpc_cni_version = "1.6"
+
   parent_dns_zone = "aws.nuuday.nu"
   dns_subdomain   = local.cluster_name
 
@@ -205,6 +207,24 @@ module "eks" {
   map_accounts = var.map_accounts
 
   tags = local.tags
+}
+
+data "http" "aws_vpc_cni" {
+  url = "https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/v${local.aws_vpc_cni_version}/aws-k8s-cni.yaml"
+}
+
+resource "null_resource" "aws_vpc_cni" {
+  provisioner "local-exec" {
+    command = <<EOF
+cat <<MOF | kubectl apply -f -
+${data.http.aws_vpc_cni.body}
+MOF
+EOF
+
+    environment = {
+      KUBECONFIG         = "${path.module}/${module.eks.kubeconfig_filename}"
+    }
+  }
 }
 
 resource "null_resource" "windows_support" {
