@@ -23,6 +23,16 @@ resource "helm_release" "nginx_ingress" {
   namespace  = kubernetes_namespace.nginx_ingress.metadata.0.name
 
   set {
+    name  = "controller.metrics.enabled"
+    value = true
+  }
+
+  set_string {
+    name  = "controller.metrics.service.annotations.prometheus\\.io/scrape"
+    value = "true"
+  }
+
+  set {
     name  = "controller.service.type"
     value = "NodePort"
   }
