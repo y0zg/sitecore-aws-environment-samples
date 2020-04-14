@@ -107,6 +107,15 @@ resource "helm_release" "cert_manager" {
     value = local.cert_manager_service_account_name
   }
 
+  # Otherwise cert-manager isn't able to read the
+  # AWS STS token mounted inside the container.
+  #
+  # https://github.com/jetstack/cert-manager/issues/2147#issuecomment-540542406
+  set {
+    name  = "securityContext.enabled"
+    value = "true"
+  }
+
   set_string {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.cert_manager.arn
