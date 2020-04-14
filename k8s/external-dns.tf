@@ -114,6 +114,22 @@ resource "helm_release" "external_dns" {
     value = "ingress"
   }
 
+  # Expose Prometheus metrics.
+  set {
+    name  = "metrics.enabled"
+    value = "true"
+  }
+
+  set_string {
+    name  = "metrics.podAnnotations.prometheus\\.io/scrape"
+    value = "true"
+  }
+
+  set_string {
+    name  = "metrics.podAnnotations.prometheus\\.io/port"
+    value = "7979"
+  }
+
   # Make ExternalDNS's service account assume the given IAM Role.
   # This is achieved through "IAM Roles for Service Accounts" (IRSA).
   set_string {
