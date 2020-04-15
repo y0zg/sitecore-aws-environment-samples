@@ -126,6 +126,16 @@ resource "helm_release" "cert_manager" {
     value = "linux"
   }
 
+  set_string {
+    name  = "webhook.nodeSelector.kubernetes\\.io/os"
+    value = "linux"
+  }
+
+  set_string {
+    name  = "cainjector.nodeSelector.kubernetes\\.io/os"
+    value = "linux"
+  }
+
   depends_on = [
     null_resource.cert_manager_crds,
   ]
