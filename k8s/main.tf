@@ -177,14 +177,16 @@ module "eks" {
   enable_irsa  = true
   vpc_id       = module.vpc.vpc_id
 
-  worker_groups = [
+  worker_groups_launch_template = [
     {
-      instance_type        = "t3.large"
-      platform             = "linux"
-      asg_max_size         = var.linux_workers_count
-      asg_min_size         = var.linux_workers_count
-      asg_desired_capacity = var.linux_workers_count
-      target_group_arns    = module.lb.target_group_arns
+      platform                = "linux"
+      asg_max_size            = var.linux_workers_count
+      asg_min_size            = var.linux_workers_count
+      asg_desired_capacity    = var.linux_workers_count
+      override_instance_types = ["t3.large"]
+      spot_instance_pools     = 1
+
+      target_group_arns = module.lb.target_group_arns
 
       additional_security_group_ids = [
         aws_security_group.worker_http_ingress.id,
@@ -193,12 +195,13 @@ module "eks" {
     },
 
     {
-      name                 = "windows-worker-group"
-      instance_type        = "m5.large"
-      platform             = "windows"
-      asg_max_size         = var.windows_workers_count
-      asg_min_size         = var.windows_workers_count
-      asg_desired_capacity = var.windows_workers_count
+      name                    = "windows-worker-group"
+      platform                = "windows"
+      asg_max_size            = var.windows_workers_count
+      asg_min_size            = var.windows_workers_count
+      asg_desired_capacity    = var.windows_workers_count
+      override_instance_types = ["m5.large"]
+      spot_instance_pools     = 1
     }
   ]
 
@@ -222,7 +225,7 @@ MOF
 EOF
 
     environment = {
-      KUBECONFIG         = "${path.module}/${module.eks.kubeconfig_filename}"
+      KUBECONFIG = "${path.module}/${module.eks.kubeconfig_filename}"
     }
   }
 }
