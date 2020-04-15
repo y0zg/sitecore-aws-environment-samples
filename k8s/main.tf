@@ -41,7 +41,7 @@ data "aws_availability_zones" "available" {}
 data "aws_region" "current" {}
 
 locals {
-  cluster_name = "test-eks-${random_string.suffix.result}"
+  cluster_name = "test-eks-${random_id.suffix.hex}"
   oidc_issuer  = trimprefix(module.eks.cluster_oidc_issuer_url, "https://")
 
   aws_vpc_cni_version = "1.6"
@@ -63,10 +63,8 @@ locals {
   }
 }
 
-resource "random_string" "suffix" {
-  length  = 8
-  special = false
-  upper   = false
+resource "random_id" "suffix" {
+  byte_length = 4
 }
 
 module "vpc" {
