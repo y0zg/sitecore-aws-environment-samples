@@ -1,3 +1,9 @@
+locals {
+  # Latest as of time of writing.
+  # Found using 'helm search repo nginx-ingress'
+  nginx_ingress_chart_version = "1.36.2" # maps to AppVersion 0.30.0
+}
+
 resource "kubernetes_namespace" "nginx_ingress" {
   metadata {
     name = "nginx-ingress"
@@ -11,8 +17,9 @@ data "helm_repository" "stable" {
 
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
-  repository = data.helm_repository.stable.metadata.0.name
   chart      = "nginx-ingress"
+  version    = local.nginx_ingress_chart_version
+  repository = data.helm_repository.stable.metadata.0.name
   namespace  = kubernetes_namespace.nginx_ingress.metadata.0.name
 
   set {
