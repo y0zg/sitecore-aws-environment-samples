@@ -1,7 +1,7 @@
 locals {
   # Latest as of time of writing.
   # Found on: https://github.com/kubernetes-sigs/external-dns
-  external_dns_version = "0.7.1"
+  external_dns_chart_version = "2.21.0"
 }
 
 resource "aws_iam_role" "external_dns" {
@@ -77,6 +77,7 @@ data "helm_repository" "bitnami" {
 resource "helm_release" "external_dns" {
   name       = "external-dns"
   chart      = "external-dns"
+  version    = local.external_dns_chart_version
   repository = data.helm_repository.bitnami.metadata.0.name
   namespace  = kubernetes_namespace.external_dns.metadata.0.name
 
