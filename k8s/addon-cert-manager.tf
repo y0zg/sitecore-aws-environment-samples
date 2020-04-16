@@ -94,6 +94,7 @@ data "helm_repository" "jetstack" {
 resource "helm_release" "cert_manager" {
   name       = "cert-manager"
   chart      = "cert-manager"
+  version    = local.cert_manager_version
   repository = data.helm_repository.jetstack.metadata.0.name
   namespace  = kubernetes_namespace.cert_manager.metadata.0.name
 
