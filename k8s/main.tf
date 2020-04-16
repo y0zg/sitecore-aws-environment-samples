@@ -237,7 +237,7 @@ resource "null_resource" "windows_support" {
   ]
 
   provisioner "local-exec" {
-    command = "sh enable-windows-support.sh -w"
+    command = "sh scripts/enable-windows-support.sh -w"
     environment = {
       KUBECONFIG         = "${path.module}/${module.eks.kubeconfig_filename}"
       AWS_DEFAULT_REGION = data.aws_region.current.name
