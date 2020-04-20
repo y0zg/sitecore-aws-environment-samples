@@ -44,6 +44,13 @@ resource "kubernetes_deployment" "iis" {
             name           = "http"
             container_port = 80
           }
+
+          resources {
+            requests {
+              cpu    = "0.25"
+              memory = "100Mi"
+            }
+          }
         }
 
         node_selector = {
