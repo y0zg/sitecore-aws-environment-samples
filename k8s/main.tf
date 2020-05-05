@@ -171,10 +171,12 @@ resource "aws_security_group" "worker_https_ingress" {
 module "eks" {
   source = "github.com/terraform-aws-modules/terraform-aws-eks?ref=v10.0.0"
 
-  cluster_name = local.cluster_name
-  subnets      = module.vpc.private_subnets
-  enable_irsa  = true
-  vpc_id       = module.vpc.vpc_id
+  cluster_name    = local.cluster_name
+  cluster_version = "1.16"
+
+  enable_irsa = true
+  vpc_id      = module.vpc.vpc_id
+  subnets     = module.vpc.private_subnets
 
   worker_groups_launch_template = [
     {
