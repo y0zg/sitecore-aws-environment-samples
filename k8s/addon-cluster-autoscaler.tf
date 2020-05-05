@@ -34,43 +34,49 @@ EOF
   tags = local.tags
 }
 
+data "aws_iam_policy_document" "cluster_autoscaler" {
+  statement {
+    sid = "Read"
+
+    actions = [
+      "autoscaling:DescribeAutoScalingGroups",
+      "autoscaling:DescribeAutoScalingInstances",
+      "autoscaling:DescribeLaunchConfigurations",
+      "autoscaling:DescribeTags",
+      "ec2:DescribeLaunchTemplateVersions",
+    ]
+
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "Write"
+
+    actions = [
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup",
+      "autoscaling:UpdateAutoScalingGroup",
+    ]
+
+    resources = ["*"]
+
+    dynamic "condition" {
+      for_each = local.cluster_autoscaler.asg_tags
+
+      content {
+        test     = "StringEqualsIgnoreCase"
+        variable = "autoscaling:ResourceTag/${condition.key}"
+        values   = [condition.value]
+      }
+    }
+  }
+}
+
 resource "aws_iam_role_policy" "cluster_autoscaler" {
   name = "ClusterAutoscaler"
   role = aws_iam_role.cluster_autoscaler.id
 
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "autoscaling:DescribeAutoScalingGroups",
-        "autoscaling:DescribeAutoScalingInstances",
-        "autoscaling:DescribeLaunchConfigurations",
-        "autoscaling:DescribeTags",
-        "ec2:DescribeLaunchTemplateVersions"
-      ],
-      "Resource": ["*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "autoscaling:SetDesiredCapacity",
-        "autoscaling:TerminateInstanceInAutoScalingGroup",
-        "autoscaling:UpdateAutoScalingGroup"
-      ],
-      "Resource": ["*"],
-      "Condition": {
-        "StringEqualsIgnoreCase": {
-          "autoscaling:ResourceTag/kubernetes.io/cluster/${module.eks.cluster_id}": "owned",
-          "autoscaling:ResourceTag/k8s.io/cluster-autoscaler/enabled": "true"
-        }
-      }
-    }
-  ]
-}
-EOF
+  policy = data.aws_iam_policy_document.cluster_autoscaler.json
 }
 
 resource "kubernetes_namespace" "cluster_autoscaler" {
