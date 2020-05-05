@@ -191,6 +191,14 @@ module "eks" {
         aws_security_group.worker_http_ingress.id,
         aws_security_group.worker_https_ingress.id,
       ]
+
+      # These indicate that this ASG will participate in auto-scaling
+      # through the cluster-autoscaler.
+      tags = [for k, v in local.cluster_autoscaler.asg_tags : {
+        key                 = k
+        value               = v
+        propagate_at_launch = false
+      }]
     },
 
     {
@@ -201,6 +209,14 @@ module "eks" {
       asg_desired_capacity    = var.windows_workers_count
       override_instance_types = ["m5.large"]
       spot_instance_pools     = 1
+
+      # These indicate that this ASG will participate in auto-scaling
+      # through the cluster-autoscaler.
+      tags = [for k, v in local.cluster_autoscaler.asg_tags : {
+        key                 = k
+        value               = v
+        propagate_at_launch = false
+      }]
     }
   ]
 
