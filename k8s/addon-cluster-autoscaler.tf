@@ -62,11 +62,12 @@ data "aws_iam_policy_document" "cluster_autoscaler" {
 
     dynamic "condition" {
       for_each = local.cluster_autoscaler.asg_tags
+      iterator = tag
 
       content {
         test     = "StringEqualsIgnoreCase"
-        variable = "autoscaling:ResourceTag/${condition.key}"
-        values   = [condition.value]
+        variable = "autoscaling:ResourceTag/${tag.key}"
+        values   = [tag.value]
       }
     }
   }
